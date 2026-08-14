@@ -3,7 +3,9 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {StreamEscrow} from "../src/StreamEscrow.sol";
+import {IERC20} from "../src/IERC20.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
+import {FailingToken} from "./mocks/FailingToken.sol";
 
 contract StreamEscrowTest is Test {
     MockERC20 token;
@@ -184,5 +186,134 @@ contract StreamEscrowTest is Test {
 
         assertLe(token.balanceOf(recipient), e.amount(), "recipient overpaid");
         assertEq(token.balanceOf(recipient) + token.balanceOf(address(e)) + token.balanceOf(sender), amount, "funds not conserved");
+    }
+
+    // ---- constructor guards ----
+
+    function test_constructor_zeroRouterReverts() public {
+        vm.expectRevert(StreamEscrow.StreamEscrow__ZeroRouter.selector);
+        new StreamEscrow(address(0), sender, recipient, token, AMOUNT, DURATION);
+    }
+
+    function test_constructor_zeroSenderReverts() public {
+        vm.expectRevert(StreamEscrow.StreamEscrow__ZeroSender.selector);
+        new StreamEscrow(address(this), address(0), recipient, token, AMOUNT, DURATION);
+    }
+
+    function test_constructor_zeroRecipientReverts() public {
+        vm.expectRevert(StreamEscrow.StreamEscrow__ZeroRecipient.selector);
+        new StreamEscrow(address(this), sender, address(0), token, AMOUNT, DURATION);
+    }
+
+    function test_constructor_zeroDurationReverts() public {
+        vm.expectRevert(StreamEscrow.StreamEscrow__ZeroDuration.selector);
+        new StreamEscrow(address(this), sender, recipient, token, AMOUNT, 0);
+    }
+
+    function test_constructor_amountLessThanDurationReverts() public {
+        vm.expectRevert(StreamEscrow.StreamEscrow__AmountBelowDuration.selector);
+        new StreamEscrow(address(this), sender, recipient, token, 5, 10);
+    }
+
+    // ---- view guards ----
+
+    function test_streamedAt_notFundedReturnsZero() public {
+        StreamEscrow e = new StreamEscrow(address(this), sender, recipient, token, AMOUNT, DURATION);
+        assertEq(e.streamedAt(block.timestamp + 500), 0);
+        assertEq(e.releasableAmount(), 0);
+        assertEq(e.refundableAmount(), e.amount());
+    }
+
+    // ---- cancel boundaries ----
+
+    function test_cancel_twiceReverts() public {
+        vm.prank(sender);
+        escrow.cancel();
+
+        vm.expectRevert(StreamEscrow.StreamEscrow__Cancelled.selector);
+        vm.prank(sender);
+        escrow.cancel();
+    }
+
+    function test_cancel_atStart_noRecipientShare() public {
+        vm.prank(sender);
+        escrow.cancel();
+
+        assertEq(token.balanceOf(recipient), 0);
+        assertEq(token.balanceOf(sender), AMOUNT);
+        assertEq(escrow.withdrawn(), 0);
+    }
+
+    function test_cancel_atEnd_noSenderRefund() public {
+        vm.warp(block.timestamp + DURATION);
+        vm.prank(sender);
+        escrow.cancel();
+
+        assertEq(token.balanceOf(recipient), AMOUNT);
+        assertEq(token.balanceOf(sender), 0);
+    }
+
+    // ---- transfer-failure branches (failing token) ----
+
+    function test_fund_refundTransferFailsReverts() public {
+        FailingToken ft = new FailingToken();
+        uint256 amount = 1000 ether;
+        uint256 duration = 3;
+        ft.mint(sender, amount);
+        vm.prank(sender);
+        ft.approve(address(this), amount);
+
+        StreamEscrow e = new StreamEscrow(address(this), sender, recipient, IERC20(address(ft)), amount, duration);
+        ft.transferFrom(sender, address(e), amount);
+
+        vm.expectRevert(StreamEscrow.StreamEscrow__TransferFailed.selector);
+        e.fund();
+    }
+
+    function test_withdraw_transferFailsReverts() public {
+        FailingToken ft = new FailingToken();
+        ft.mint(sender, AMOUNT);
+        vm.prank(sender);
+        ft.approve(address(this), AMOUNT);
+
+        StreamEscrow e = new StreamEscrow(address(this), sender, recipient, IERC20(address(ft)), AMOUNT, DURATION);
+        ft.transferFrom(sender, address(e), AMOUNT);
+        e.fund();
+
+        vm.warp(block.timestamp + 100);
+        vm.prank(recipient);
+        vm.expectRevert(StreamEscrow.StreamEscrow__TransferFailed.selector);
+        e.withdraw();
+    }
+
+    function test_cancel_recipientShareTransferFailsReverts() public {
+        FailingToken ft = new FailingToken();
+        ft.mint(sender, AMOUNT);
+        vm.prank(sender);
+        ft.approve(address(this), AMOUNT);
+
+        StreamEscrow e = new StreamEscrow(address(this), sender, recipient, IERC20(address(ft)), AMOUNT, DURATION);
+        ft.transferFrom(sender, address(e), AMOUNT);
+        e.fund();
+
+        vm.warp(block.timestamp + 100);
+        vm.prank(sender);
+        vm.expectRevert(StreamEscrow.StreamEscrow__TransferFailed.selector);
+        e.cancel();
+    }
+
+    function test_cancel_senderRefundTransferFailsReverts() public {
+        FailingToken ft = new FailingToken();
+        ft.mint(sender, AMOUNT);
+        vm.prank(sender);
+        ft.approve(address(this), AMOUNT);
+
+        StreamEscrow e = new StreamEscrow(address(this), sender, recipient, IERC20(address(ft)), AMOUNT, DURATION);
+        ft.transferFrom(sender, address(e), AMOUNT);
+        e.fund();
+
+        vm.prank(sender);
+        vm.expectRevert(StreamEscrow.StreamEscrow__TransferFailed.selector);
+        e.cancel();
     }
 }

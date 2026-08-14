@@ -21,6 +21,19 @@ contract MilestoneEscrow {
     error MilestoneEscrow__InvalidTranche();
     error MilestoneEscrow__BeforeDeadline();
     error MilestoneEscrow__AlreadyCancelled();
+    error MilestoneEscrow__ZeroRouter();
+    error MilestoneEscrow__ZeroSender();
+    error MilestoneEscrow__ZeroRecipient();
+    error MilestoneEscrow__NoTranches();
+    error MilestoneEscrow__DeadlineInPast();
+    error MilestoneEscrow__ZeroTranche();
+    error MilestoneEscrow__TrancheMismatch();
+    error MilestoneEscrow__ZeroOracle();
+    error MilestoneEscrow__NoApprovers();
+    error MilestoneEscrow__ZeroApprover();
+    error MilestoneEscrow__DuplicateApprover();
+    error MilestoneEscrow__BadThreshold();
+    error MilestoneEscrow__TransferFailed();
 
     address public immutable router;
     address public immutable sender;
@@ -66,19 +79,19 @@ contract MilestoneEscrow {
         address _oracle,
         uint256 _releaseDeadline
     ) {
-        require(_router != address(0), "zero router");
-        require(_sender != address(0), "zero sender");
-        require(_recipient != address(0), "zero recipient");
-        require(_trancheAmounts.length > 0, "no tranches");
-        require(_releaseDeadline > block.timestamp, "deadline in past");
+        if (_router == address(0)) revert MilestoneEscrow__ZeroRouter();
+        if (_sender == address(0)) revert MilestoneEscrow__ZeroSender();
+        if (_recipient == address(0)) revert MilestoneEscrow__ZeroRecipient();
+        if (_trancheAmounts.length == 0) revert MilestoneEscrow__NoTranches();
+        if (_releaseDeadline <= block.timestamp) revert MilestoneEscrow__DeadlineInPast();
 
         uint256 sum;
         for (uint256 i = 0; i < _trancheAmounts.length; i++) {
-            require(_trancheAmounts[i] > 0, "zero tranche");
+            if (_trancheAmounts[i] == 0) revert MilestoneEscrow__ZeroTranche();
             sum += _trancheAmounts[i];
             trancheAmounts.push(_trancheAmounts[i]);
         }
-        require(sum == _amount, "tranches != amount");
+        if (sum != _amount) revert MilestoneEscrow__TrancheMismatch();
 
         router = _router;
         sender = _sender;
@@ -91,17 +104,19 @@ contract MilestoneEscrow {
         oracle = _oracle;
 
         if (_mode == Types.ApprovalMode.Oracle) {
-            require(_oracle != address(0), "zero oracle");
+            if (_oracle == address(0)) revert MilestoneEscrow__ZeroOracle();
         } else {
-            require(_approvers.length > 0, "no approvers");
+            if (_approvers.length == 0) revert MilestoneEscrow__NoApprovers();
             for (uint256 i = 0; i < _approvers.length; i++) {
-                require(_approvers[i] != address(0), "zero approver");
-                require(!isApprover[_approvers[i]], "dup approver");
+                if (_approvers[i] == address(0)) revert MilestoneEscrow__ZeroApprover();
+                if (isApprover[_approvers[i]]) revert MilestoneEscrow__DuplicateApprover();
                 isApprover[_approvers[i]] = true;
                 approvers.push(_approvers[i]);
             }
             if (_mode == Types.ApprovalMode.Multisig) {
-                require(_threshold > 0 && _threshold <= _approvers.length, "bad threshold");
+                if (_threshold == 0 || _threshold > _approvers.length) {
+                    revert MilestoneEscrow__BadThreshold();
+                }
                 threshold = _threshold;
             } else {
                 // Vote: simple majority of the voter set.
@@ -169,7 +184,7 @@ contract MilestoneEscrow {
         trancheReleased[index] = true;
         releasedAmount += trancheAmounts[index];
         bool ok = token.transfer(recipient, trancheAmounts[index]);
-        require(ok, "release failed");
+        if (!ok) revert MilestoneEscrow__TransferFailed();
         emit MilestoneReleased(index, trancheAmounts[index]);
     }
 
@@ -184,7 +199,7 @@ contract MilestoneEscrow {
         uint256 refund = amount - releasedAmount;
         if (refund > 0) {
             bool ok = token.transfer(sender, refund);
-            require(ok, "refund failed");
+            if (!ok) revert MilestoneEscrow__TransferFailed();
         }
         emit MilestoneCancelled(refund);
     }

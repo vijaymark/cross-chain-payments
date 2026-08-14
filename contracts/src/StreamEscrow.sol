@@ -25,6 +25,12 @@ contract StreamEscrow {
     error StreamEscrow__NotSender();
     error StreamEscrow__NotRecipient();
     error StreamEscrow__NothingToWithdraw();
+    error StreamEscrow__ZeroRouter();
+    error StreamEscrow__ZeroSender();
+    error StreamEscrow__ZeroRecipient();
+    error StreamEscrow__ZeroDuration();
+    error StreamEscrow__AmountBelowDuration();
+    error StreamEscrow__TransferFailed();
 
     address public immutable router;
     address public immutable sender;
@@ -55,11 +61,11 @@ contract StreamEscrow {
         uint256 _amount,
         uint256 _duration
     ) {
-        require(_router != address(0), "zero router");
-        require(_sender != address(0), "zero sender");
-        require(_recipient != address(0), "zero recipient");
-        require(_duration > 0, "zero duration");
-        require(_amount >= _duration, "amount < duration");
+        if (_router == address(0)) revert StreamEscrow__ZeroRouter();
+        if (_sender == address(0)) revert StreamEscrow__ZeroSender();
+        if (_recipient == address(0)) revert StreamEscrow__ZeroRecipient();
+        if (_duration == 0) revert StreamEscrow__ZeroDuration();
+        if (_amount < _duration) revert StreamEscrow__AmountBelowDuration();
 
         router = _router;
         sender = _sender;
@@ -87,7 +93,7 @@ contract StreamEscrow {
         uint256 remainder = requestedAmount - amount;
         if (remainder > 0) {
             bool ok = token.transfer(sender, remainder);
-            require(ok, "refund failed");
+            if (!ok) revert StreamEscrow__TransferFailed();
         }
         emit StreamFunded(amount, remainder);
     }
@@ -125,7 +131,7 @@ contract StreamEscrow {
 
         withdrawn += share;
         bool ok = token.transfer(recipient, share);
-        require(ok, "withdraw failed");
+        if (!ok) revert StreamEscrow__TransferFailed();
         emit StreamWithdrawn(recipient, share);
     }
 
@@ -143,11 +149,11 @@ contract StreamEscrow {
         if (recipientShare > 0) {
             withdrawn += recipientShare;
             bool ok = token.transfer(recipient, recipientShare);
-            require(ok, "recipient share failed");
+            if (!ok) revert StreamEscrow__TransferFailed();
         }
         if (senderRefund > 0) {
             bool ok = token.transfer(sender, senderRefund);
-            require(ok, "sender refund failed");
+            if (!ok) revert StreamEscrow__TransferFailed();
         }
         emit StreamCancelled(recipientShare, senderRefund);
     }

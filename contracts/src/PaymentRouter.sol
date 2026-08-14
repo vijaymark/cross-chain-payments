@@ -25,6 +25,13 @@ contract PaymentRouter is IBridgeReceiver {
     error PaymentRouter__WrongDestChain();
     error PaymentRouter__Replay();
     error PaymentRouter__TokenNotAllowed();
+    error PaymentRouter__ZeroOwner();
+    error PaymentRouter__TransferFailed();
+    error PaymentRouter__NotSender();
+    error PaymentRouter__AlreadySettled();
+    error PaymentRouter__AlreadyRefunded();
+    error PaymentRouter__BeforeTimeout();
+    error PaymentRouter__UnknownLock();
 
     /// @notice Chain id of the chain this router is deployed on.
     uint256 public immutable sourceChainId;
@@ -114,7 +121,7 @@ contract PaymentRouter is IBridgeReceiver {
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
-        require(newOwner != address(0), "zero owner");
+        if (newOwner == address(0)) revert PaymentRouter__ZeroOwner();
         owner = newOwner;
     }
 
@@ -175,7 +182,7 @@ contract PaymentRouter is IBridgeReceiver {
         );
 
         bool ok = IERC20(token).transferFrom(msg.sender, address(this), amount);
-        require(ok, "transfer failed");
+        if (!ok) revert PaymentRouter__TransferFailed();
         oneTimeLocks[messageId] = OneTimeLock({
             sender: msg.sender,
             token: token,
@@ -189,14 +196,14 @@ contract PaymentRouter is IBridgeReceiver {
     /// @notice Sender recovers a one-time payment if it was never delivered.
     function refundOneTime(bytes32 messageId) external {
         OneTimeLock storage lock = oneTimeLocks[messageId];
-        require(lock.sender == msg.sender, "not sender");
-        require(!lock.settled, "already settled");
-        require(!lock.refunded, "already refunded");
-        require(block.timestamp > lock.timeout, "before timeout");
+        if (lock.sender != msg.sender) revert PaymentRouter__NotSender();
+        if (lock.settled) revert PaymentRouter__AlreadySettled();
+        if (lock.refunded) revert PaymentRouter__AlreadyRefunded();
+        if (block.timestamp <= lock.timeout) revert PaymentRouter__BeforeTimeout();
 
         lock.refunded = true;
         bool ok = IERC20(lock.token).transfer(msg.sender, lock.amount);
-        require(ok, "refund failed");
+        if (!ok) revert PaymentRouter__TransferFailed();
         emit OneTimeRefunded(messageId, lock.amount);
     }
 
@@ -227,7 +234,7 @@ contract PaymentRouter is IBridgeReceiver {
         StreamEscrow escrow =
             new StreamEscrow(address(this), msg.sender, recipient, IERC20(token), amount, duration);
         bool ok = IERC20(token).transferFrom(msg.sender, address(escrow), amount);
-        require(ok, "transfer failed");
+        if (!ok) revert PaymentRouter__TransferFailed();
         escrow.fund();
         escrowAddress = address(escrow);
     }
@@ -273,7 +280,7 @@ contract PaymentRouter is IBridgeReceiver {
             releaseDeadline
         );
         bool ok = IERC20(token).transferFrom(msg.sender, address(escrow), amount);
-        require(ok, "transfer failed");
+        if (!ok) revert PaymentRouter__TransferFailed();
         escrow.fund();
         escrowAddress = address(escrow);
     }
@@ -301,7 +308,7 @@ contract PaymentRouter is IBridgeReceiver {
     /// the destination confirms delivery). Blocks the sender's timeout refund.
     function settleOneTime(bytes32 messageId) external onlyBridge {
         OneTimeLock storage lock = oneTimeLocks[messageId];
-        require(lock.amount > 0, "unknown lock");
+        if (lock.amount == 0) revert PaymentRouter__UnknownLock();
         lock.settled = true;
     }
 

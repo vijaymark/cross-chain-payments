@@ -7,6 +7,11 @@ import {IBridgeAdapter, IBridgeReceiver} from "./IBridgeAdapter.sol";
 /// `send → deliver` flow of a real bridge without an external relayer, routing
 /// each message to the destination router registered for its `destChainId`.
 contract MockBridgeAdapter is IBridgeAdapter {
+    error MockBridge__NotOwner();
+    error MockBridge__NotQueued();
+    error MockBridge__AlreadyDelivered();
+    error MockBridge__NoRouter();
+
     /// @notice chainId -> destination router that receives delivered messages.
     mapping(uint256 => address) public routers;
 
@@ -29,7 +34,7 @@ contract MockBridgeAdapter is IBridgeAdapter {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "not owner");
+        if (msg.sender != owner) revert MockBridge__NotOwner();
         _;
     }
 
@@ -54,10 +59,10 @@ contract MockBridgeAdapter is IBridgeAdapter {
     /// registered for its destination chain.
     function deliver(bytes32 deliveryId) external {
         Outbound storage o = outbox[deliveryId];
-        require(o.payload.length > 0, "MockBridge: not queued");
-        require(!o.delivered, "MockBridge: already delivered");
+        if (o.payload.length == 0) revert MockBridge__NotQueued();
+        if (o.delivered) revert MockBridge__AlreadyDelivered();
         address router = routers[o.destChainId];
-        require(router != address(0), "MockBridge: no router for chain");
+        if (router == address(0)) revert MockBridge__NoRouter();
         o.delivered = true;
         IBridgeReceiver(router).receiveMessage(o.payload);
     }

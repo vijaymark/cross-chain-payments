@@ -6,6 +6,8 @@ import {PaymentRouter} from "../src/PaymentRouter.sol";
 import {MockBridgeAdapter} from "../src/MockBridgeAdapter.sol";
 import {Types} from "../src/Types.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
+import {FailingToken} from "./mocks/FailingToken.sol";
+import {RejectingToken} from "./mocks/RejectingToken.sol";
 
 contract PaymentRouterTest is Test {
     PaymentRouter sourceRouter; // chain 1 (Ethereum)
@@ -92,7 +94,7 @@ contract PaymentRouterTest is Test {
             address(token), 100 ether, DEST_TOKEN, recipient, DEST_CHAIN, block.timestamp + 100
         );
 
-        vm.expectRevert(bytes("before timeout"));
+        vm.expectRevert(PaymentRouter.PaymentRouter__BeforeTimeout.selector);
         vm.prank(funder);
         sourceRouter.refundOneTime(messageId);
     }
@@ -108,7 +110,7 @@ contract PaymentRouterTest is Test {
         sourceRouter.settleOneTime(messageId); // destination confirmed delivery
 
         vm.warp(block.timestamp + 101);
-        vm.expectRevert(bytes("already settled"));
+        vm.expectRevert(PaymentRouter.PaymentRouter__AlreadySettled.selector);
         vm.prank(funder);
         sourceRouter.refundOneTime(messageId);
     }
@@ -275,5 +277,259 @@ contract PaymentRouterTest is Test {
         vm.prank(stranger);
         vm.expectRevert(PaymentRouter.PaymentRouter__NotOwner.selector);
         sourceRouter.setTokenMapping(address(token), DEST_CHAIN, DEST_TOKEN);
+    }
+
+    // ---- input guards ----
+
+    function test_sendPayment_zeroAmountReverts() public {
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__ZeroAmount.selector);
+        sourceRouter.sendPayment(address(token), 0, DEST_TOKEN, recipient, DEST_CHAIN, block.timestamp + 100);
+    }
+
+    function test_sendPayment_zeroRecipientReverts() public {
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__ZeroRecipient.selector);
+        sourceRouter.sendPayment(address(token), 1 ether, DEST_TOKEN, address(0), DEST_CHAIN, block.timestamp + 100);
+    }
+
+    function test_sendPayment_timeoutInPastReverts() public {
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TimeoutInPast.selector);
+        sourceRouter.sendPayment(address(token), 1 ether, DEST_TOKEN, recipient, DEST_CHAIN, block.timestamp);
+    }
+
+    function test_streamPayment_zeroAmountReverts() public {
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__ZeroAmount.selector);
+        sourceRouter.streamPayment(address(token), 0, DEST_TOKEN, recipient, DEST_CHAIN, 100, block.timestamp + 100);
+    }
+
+    function test_streamPayment_zeroDurationReverts() public {
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__ZeroDuration.selector);
+        sourceRouter.streamPayment(address(token), 1 ether, DEST_TOKEN, recipient, DEST_CHAIN, 0, block.timestamp + 100);
+    }
+
+    function test_streamPayment_timeoutInPastReverts() public {
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TimeoutInPast.selector);
+        sourceRouter.streamPayment(address(token), 1 ether, DEST_TOKEN, recipient, DEST_CHAIN, 100, block.timestamp);
+    }
+
+    function test_createMilestonePayment_zeroAmountReverts() public {
+        uint256[] memory tranches = new uint256[](1);
+        tranches[0] = 1 ether;
+        address[] memory approvers = new address[](1);
+        approvers[0] = address(0xA);
+
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__ZeroAmount.selector);
+        sourceRouter.createMilestonePayment(
+            address(token), 0, DEST_TOKEN, recipient, DEST_CHAIN, tranches,
+            Types.ApprovalMode.Multisig, approvers, 1, address(0), block.timestamp + 1000, block.timestamp + 100
+        );
+    }
+
+    function test_sendPayment_noBridgeReverts() public {
+        PaymentRouter r = new PaymentRouter(SOURCE_CHAIN);
+        r.setTokenMapping(address(token), DEST_CHAIN, DEST_TOKEN);
+        vm.expectRevert(PaymentRouter.PaymentRouter__NoBridge.selector);
+        r.sendPayment(address(token), 1 ether, DEST_TOKEN, recipient, DEST_CHAIN, block.timestamp + 100);
+    }
+
+    // ---- refund / settle guards ----
+
+    function test_refundOneTime_notSenderReverts() public {
+        _approve(100 ether);
+        vm.prank(funder);
+        bytes32 messageId = sourceRouter.sendPayment(address(token), 100 ether, DEST_TOKEN, recipient, DEST_CHAIN, block.timestamp + 100);
+
+        vm.warp(block.timestamp + 101);
+        vm.prank(stranger);
+        vm.expectRevert(PaymentRouter.PaymentRouter__NotSender.selector);
+        sourceRouter.refundOneTime(messageId);
+    }
+
+    function test_refundOneTime_alreadyRefundedReverts() public {
+        _approve(100 ether);
+        vm.prank(funder);
+        bytes32 messageId = sourceRouter.sendPayment(address(token), 100 ether, DEST_TOKEN, recipient, DEST_CHAIN, block.timestamp + 100);
+
+        vm.warp(block.timestamp + 101);
+        vm.prank(funder);
+        sourceRouter.refundOneTime(messageId);
+
+        vm.expectRevert(PaymentRouter.PaymentRouter__AlreadyRefunded.selector);
+        vm.prank(funder);
+        sourceRouter.refundOneTime(messageId);
+    }
+
+    function test_settleOneTime_unknownLockReverts() public {
+        vm.prank(address(bridge));
+        vm.expectRevert(PaymentRouter.PaymentRouter__UnknownLock.selector);
+        sourceRouter.settleOneTime(bytes32(uint256(0xDEADBEEF)));
+    }
+
+    function test_transferOwnership_zeroOwnerReverts() public {
+        vm.expectRevert(PaymentRouter.PaymentRouter__ZeroOwner.selector);
+        sourceRouter.transferOwnership(address(0));
+    }
+
+    function test_transferOwnership_success() public {
+        address newOwner = address(0xC0FFEE);
+        sourceRouter.transferOwnership(newOwner);
+        assertEq(sourceRouter.owner(), newOwner);
+    }
+
+    // ---- stream / milestone input guards (remaining) ----
+
+    function test_streamPayment_zeroRecipientReverts() public {
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__ZeroRecipient.selector);
+        sourceRouter.streamPayment(address(token), 1 ether, DEST_TOKEN, address(0), DEST_CHAIN, 100, block.timestamp + 100);
+    }
+
+    function test_streamPayment_tokenNotAllowedReverts() public {
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TokenNotAllowed.selector);
+        sourceRouter.streamPayment(address(token), 1 ether, bytes32(uint256(0xBADC0DE)), recipient, DEST_CHAIN, 100, block.timestamp + 100);
+    }
+
+    function test_createMilestonePayment_zeroRecipientReverts() public {
+        uint256[] memory tranches = new uint256[](1);
+        tranches[0] = 1 ether;
+        address[] memory approvers = new address[](1);
+        approvers[0] = address(0xA);
+
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__ZeroRecipient.selector);
+        sourceRouter.createMilestonePayment(
+            address(token), 1 ether, DEST_TOKEN, address(0), DEST_CHAIN, tranches,
+            Types.ApprovalMode.Multisig, approvers, 1, address(0), block.timestamp + 1000, block.timestamp + 100
+        );
+    }
+
+    function test_createMilestonePayment_timeoutInPastReverts() public {
+        uint256[] memory tranches = new uint256[](1);
+        tranches[0] = 1 ether;
+        address[] memory approvers = new address[](1);
+        approvers[0] = address(0xA);
+
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TimeoutInPast.selector);
+        sourceRouter.createMilestonePayment(
+            address(token), 1 ether, DEST_TOKEN, recipient, DEST_CHAIN, tranches,
+            Types.ApprovalMode.Multisig, approvers, 1, address(0), block.timestamp + 1000, block.timestamp
+        );
+    }
+
+    function test_createMilestonePayment_tokenNotAllowedReverts() public {
+        uint256[] memory tranches = new uint256[](1);
+        tranches[0] = 1 ether;
+        address[] memory approvers = new address[](1);
+        approvers[0] = address(0xA);
+
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TokenNotAllowed.selector);
+        sourceRouter.createMilestonePayment(
+            address(token), 1 ether, bytes32(uint256(0xBADC0DE)), recipient, DEST_CHAIN, tranches,
+            Types.ApprovalMode.Multisig, approvers, 1, address(0), block.timestamp + 1000, block.timestamp + 100
+        );
+    }
+
+    // ---- transfer-failure branches ----
+
+    function test_sendPayment_transferFailsReverts() public {
+        RejectingToken rt = new RejectingToken();
+        sourceRouter.setTokenMapping(address(rt), DEST_CHAIN, DEST_TOKEN);
+        rt.mint(funder, 100 ether);
+        vm.prank(funder);
+        rt.approve(address(sourceRouter), 100 ether);
+
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TransferFailed.selector);
+        sourceRouter.sendPayment(address(rt), 100 ether, DEST_TOKEN, recipient, DEST_CHAIN, block.timestamp + 100);
+    }
+
+    function test_streamPayment_transferFailsReverts() public {
+        RejectingToken rt = new RejectingToken();
+        sourceRouter.setTokenMapping(address(rt), DEST_CHAIN, DEST_TOKEN);
+        rt.mint(funder, 100 ether);
+        vm.prank(funder);
+        rt.approve(address(sourceRouter), 100 ether);
+
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TransferFailed.selector);
+        sourceRouter.streamPayment(address(rt), 100 ether, DEST_TOKEN, recipient, DEST_CHAIN, 100, block.timestamp + 100);
+    }
+
+    function test_createMilestonePayment_transferFailsReverts() public {
+        uint256[] memory tranches = new uint256[](1);
+        tranches[0] = 100 ether;
+        address[] memory approvers = new address[](1);
+        approvers[0] = address(0xA);
+
+        RejectingToken rt = new RejectingToken();
+        sourceRouter.setTokenMapping(address(rt), DEST_CHAIN, DEST_TOKEN);
+        rt.mint(funder, 100 ether);
+        vm.prank(funder);
+        rt.approve(address(sourceRouter), 100 ether);
+
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TransferFailed.selector);
+        sourceRouter.createMilestonePayment(
+            address(rt), 100 ether, DEST_TOKEN, recipient, DEST_CHAIN, tranches,
+            Types.ApprovalMode.Multisig, approvers, 1, address(0), block.timestamp + 1000, block.timestamp + 100
+        );
+    }
+
+    function test_refundOneTime_transferFailsReverts() public {
+        FailingToken ft = new FailingToken();
+        sourceRouter.setTokenMapping(address(ft), DEST_CHAIN, DEST_TOKEN);
+        ft.mint(funder, 100 ether);
+        vm.prank(funder);
+        ft.approve(address(sourceRouter), 100 ether);
+
+        vm.prank(funder);
+        bytes32 messageId = sourceRouter.sendPayment(
+            address(ft), 100 ether, DEST_TOKEN, recipient, DEST_CHAIN, block.timestamp + 100
+        );
+
+        vm.warp(block.timestamp + 101);
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TransferFailed.selector);
+        sourceRouter.refundOneTime(messageId);
+    }
+
+    // ---- token mapping revocation + bridge-not-set branches ----
+
+    function test_removeTokenMapping_revokesMapping() public {
+        sourceRouter.removeTokenMapping(address(token), DEST_CHAIN);
+        _approve(100 ether);
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TokenNotAllowed.selector);
+        sourceRouter.sendPayment(address(token), 100 ether, DEST_TOKEN, recipient, DEST_CHAIN, block.timestamp + 100);
+    }
+
+    function test_receiveMessage_noBridgeSetReverts() public {
+        PaymentRouter r = new PaymentRouter(DEST_CHAIN);
+        Types.CrossChainMessage memory message = Types.CrossChainMessage({
+            nonce: 0,
+            sourceChainId: SOURCE_CHAIN,
+            destChainId: DEST_CHAIN,
+            token: DEST_TOKEN,
+            amount: 1 ether,
+            recipient: abi.encodePacked(recipient),
+            mode: Types.PaymentMode.OneTime,
+            metadata: ""
+        });
+        vm.expectRevert(PaymentRouter.PaymentRouter__NotBridge.selector);
+        r.receiveMessage(abi.encode(message));
+    }
+
+    function test_getters_exposeMappings() public view {
+        assertEq(sourceRouter.tokenMap(address(token), DEST_CHAIN), DEST_TOKEN);
+        assertTrue(destRouter.allowedDestTokens(DEST_TOKEN));
     }
 }

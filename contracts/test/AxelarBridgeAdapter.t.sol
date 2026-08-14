@@ -84,4 +84,22 @@ contract AxelarBridgeAdapterTest is Test {
         vm.expectRevert();
         gateway.deliver(COMMAND_ID, SOURCE_CHAIN, DEST_ROUTER, address(adapter), PAYLOAD);
     }
+
+    function test_execute_noRouterReverts() public {
+        AxelarBridgeAdapter noRouterAdapter = new AxelarBridgeAdapter(address(gateway));
+        vm.expectRevert(AxelarBridgeAdapter.AxelarBridgeAdapter__NoRouter.selector);
+        noRouterAdapter.execute(COMMAND_ID, SOURCE_CHAIN, DEST_ROUTER, PAYLOAD);
+    }
+
+    function test_transferOwnership_success() public {
+        address newOwner = address(0xC0FFEE);
+        adapter.transferOwnership(newOwner);
+        assertEq(adapter.owner(), newOwner);
+    }
+
+    function test_setRouter_onlyOwnerReverts() public {
+        vm.prank(address(0xBAD));
+        vm.expectRevert(AxelarBridgeAdapter.AxelarBridgeAdapter__NotOwner.selector);
+        adapter.setRouter(address(0xBAD));
+    }
 }
