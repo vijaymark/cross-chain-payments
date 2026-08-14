@@ -70,7 +70,7 @@ interface BaseRequest {
   timeout: number;
 }
 
-export interface OneTimeRequest extends BaseRequest {}
+export type OneTimeRequest = BaseRequest;
 
 export interface StreamRequest extends BaseRequest {
   /** Total stream duration in seconds. */
