@@ -12,7 +12,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://github.com/vijaymark/cross-chain-payments/actions/workflows/contracts-test.yml"><img src="https://github.com/vijaymark/cross-chain-payments/actions/workflows/contracts-test.yml/badge.svg" alt="Contracts CI" /></a>
   <a href="https://github.com/vijaymark/cross-chain-payments/actions/workflows/ci.yml"><img src="https://github.com/vijaymark/cross-chain-payments/actions/workflows/ci.yml/badge.svg" alt="SDK CI" /></a>
-  <a href="https://codecov.io/gh/vijaymark/cross-chain-payments"><img src="https://img.shields.io/badge/coverage-93%25-brightgreen.svg" alt="Coverage" /></a>
+  <a href="https://codecov.io/gh/vijaymark/cross-chain-payments"><img src="https://img.shields.io/badge/coverage-90%25-brightgreen.svg" alt="Coverage" /></a>
   <a href="https://github.com/vijaymark/cross-chain-payments"><img src="https://img.shields.io/badge/status-unaudited%20MVP-orange.svg" alt="Status" /></a>
 </p>
 
@@ -106,8 +106,8 @@ curl -L https://foundry.paradigm.xyz | bash
 foundryup
 cd contracts
 forge install foundry-rs/forge-std
-forge test          # 45 tests
-forge coverage --ir-minimum   # 92.7% line coverage
+forge test          # 132 tests
+forge coverage --ir-minimum   # 90.6% line / 89.3% branch
 ```
 
 ### 2. Soroban contracts (Rust)
@@ -115,7 +115,7 @@ forge coverage --ir-minimum   # 92.7% line coverage
 ```bash
 rustup target add wasm32v1-none
 cd soroban
-cargo test          # 18 tests
+cargo test          # 19 tests
 cargo build --release --target wasm32v1-none
 ```
 
