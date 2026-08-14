@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -33,6 +35,11 @@ jobs:
       # Anvil is needed by the SDK's EVM integration tests.
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+
+      # The SDK's EVM integration tests deploy contracts from contracts/out/.
+      - name: Build contracts (forge)
+        run: forge build
+        working-directory: contracts
 
       - name: Install dependencies
         run: npm ci
