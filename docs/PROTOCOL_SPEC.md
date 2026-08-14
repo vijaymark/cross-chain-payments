@@ -209,5 +209,10 @@ event MessageReceived(nonce, sourceChainId, destChainId)
 - Contracts are **unaudited**. See `docs/SECURITY.md` for the full threat model.
 - The bridge adapter is the single trust boundary; escrow accounting is
   independent of it and is fully covered by on-chain tests.
-- `token` must be validated against a per-chain allowlist by the router to
-  prevent spoofed cross-chain token claims.
+- `token` is validated against a per-chain allowlist by the router to prevent
+  spoofed cross-chain token claims:
+  - **EVM** — the funder's `destToken` must equal `tokenMap[token][destChainId]`
+    (registered via `setTokenMapping`), and `receiveMessage` requires
+    `allowedDestTokens[message.token]`.
+  - **Soroban** — `send_*` and `receive_message` require the token to be in the
+    router's allowlist (registered via `set_allowed_token`).

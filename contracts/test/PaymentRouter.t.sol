@@ -32,6 +32,10 @@ contract PaymentRouterTest is Test {
 
         token = new MockERC20();
         token.mint(funder, 1000 ether);
+
+        // Register the token mapping (source) and destination allowlist.
+        sourceRouter.setTokenMapping(address(token), DEST_CHAIN, DEST_TOKEN);
+        destRouter.setAllowedDestToken(DEST_TOKEN, true);
     }
 
     function _approve(uint256 amount) internal {
@@ -237,5 +241,39 @@ contract PaymentRouterTest is Test {
         vm.prank(stranger);
         vm.expectRevert(PaymentRouter.PaymentRouter__NotOwner.selector);
         sourceRouter.setBridge(stranger);
+    }
+
+    // ---- token allowlist ----
+
+    function test_sendPayment_tokenNotAllowedReverts() public {
+        _approve(100 ether);
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TokenNotAllowed.selector);
+        sourceRouter.sendPayment(
+            address(token), 100 ether, bytes32(uint256(0xBADC0DE)), recipient, DEST_CHAIN, block.timestamp + 100
+        );
+    }
+
+    function test_receiveMessage_tokenNotAllowedReverts() public {
+        Types.CrossChainMessage memory message = Types.CrossChainMessage({
+            nonce: 0,
+            sourceChainId: SOURCE_CHAIN,
+            destChainId: DEST_CHAIN,
+            token: bytes32(uint256(0xBADC0DE)), // not allowlisted on dest
+            amount: 1 ether,
+            recipient: abi.encodePacked(recipient),
+            mode: Types.PaymentMode.OneTime,
+            metadata: ""
+        });
+
+        vm.expectRevert(PaymentRouter.PaymentRouter__TokenNotAllowed.selector);
+        vm.prank(address(bridge));
+        destRouter.receiveMessage(abi.encode(message));
+    }
+
+    function test_setTokenMapping_onlyOwner() public {
+        vm.prank(stranger);
+        vm.expectRevert(PaymentRouter.PaymentRouter__NotOwner.selector);
+        sourceRouter.setTokenMapping(address(token), DEST_CHAIN, DEST_TOKEN);
     }
 }

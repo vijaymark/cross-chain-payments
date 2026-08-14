@@ -16,7 +16,7 @@ vulnerabilities.
 | 3 | **Oracle manipulation** — a corrupt oracle attests a milestone that is not complete | Grant tranches released prematurely | Oracle is a single configured attestation key. **Mitigation:** prefer multisig/vote modes for production grants; document the oracle's trusted role. |
 | 4 | **Escrow lock-up on bridge failure** — a message never arrives | Sender funds stranded | Timeout fallback: one-time payments refund after `timeout`; milestone escrows refund unreleased tranches after `releaseDeadline`; streams refund on `cancel()`. |
 | 5 | **MEV on payment release** — release transactions are front-run | Recipient receives less than intended (indirectly, via ordering) | Release functions are permissioned to the recipient/sender/approvers and deterministic; amounts are fixed by the escrow, so ordering cannot change *who* receives *how much*. |
-| 6 | **Spoofed token** — a fake cross-chain token id is claimed | Recipient holds a valueless wrapped token | **Not yet mitigated in the MVP.** Production requires a per-chain token allowlist in the router (see `PROTOCOL_SPEC.md` §9). |
+| 6 | **Spoofed token** — a fake cross-chain token id is claimed | Recipient believes they will receive a token that was never funded | **Mitigated.** The router enforces a token allowlist: a source `token` may only claim the `destToken` registered via `setTokenMapping` (`tokenMap[token][destChainId] == destToken`), and `receiveMessage` rejects tokens not in `allowedDestTokens`. |
 | 7 | **Router admin compromise** — owner key is stolen | Attacker can set a malicious bridge or take ownership | `onlyOwner` guards bridge/ownership changes. **Mitigation:** use a multisig owner in production; see Roadmap. |
 | 8 | **Rounding / overflow in stream math** | Incorrect release amounts | Streams compute `ratePerSecond = amount / duration` and refund the division dust at funding; accounting is tested with fuzz tests against rounding and overflow. |
 
@@ -42,8 +42,10 @@ bridge and is fully covered by on-chain tests.
   authenticity. An Axelar GMP adapter is now implemented
   (`AxelarBridgeAdapter`, `soroban-axelar/`) but is **unaudited**; it must be
   audited before any real value is routed.
-- Cross-chain token mapping (allowlists, wrapped-asset verification) is not
-  implemented.
+- Cross-chain token mapping is enforced via an allowlist
+  (`setTokenMapping` / `allowedDestTokens` on EVM, `set_allowed_token` on
+  Soroban), but wrapped-asset supply verification (confirming the destination
+  token is backed) is not yet implemented.
 - No pausability / emergency circuit-breaker exists yet.
 
 ## Responsible disclosure

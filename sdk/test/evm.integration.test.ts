@@ -34,6 +34,10 @@ const RECIPIENT_ACCOUNT = privateKeyToAccount(
 const FUNDER = FUNDER_ACCOUNT.address;
 const RECIPIENT = RECIPIENT_ACCOUNT.address;
 
+// Canonical destination-token id used across all three payment modes. The
+// router only accepts a `destToken` registered via `setTokenMapping`.
+const DEST_TOKEN = ("0x" + "22".repeat(32)) as Hex;
+
 let anvil: ChildProcess;
 let publicClient: PublicClient;
 let walletClient: WalletClient;
@@ -125,6 +129,17 @@ beforeAll(async () => {
   await write(walletClient, FUNDER_ACCOUNT, sourceRouter, routerAbi, "setBridge", [bridge]);
   await write(walletClient, FUNDER_ACCOUNT, destRouter, routerAbi, "setBridge", [bridge]);
 
+  // Register the token mapping (source) and destination allowlist.
+  await write(walletClient, FUNDER_ACCOUNT, sourceRouter, routerAbi, "setTokenMapping", [
+    token,
+    1500n,
+    DEST_TOKEN,
+  ]);
+  await write(walletClient, FUNDER_ACCOUNT, destRouter, routerAbi, "setAllowedDestToken", [
+    DEST_TOKEN,
+    true,
+  ]);
+
   await write(walletClient, FUNDER_ACCOUNT, token, tokenAbi, "mint", [FUNDER, parseEther("1000")]);
   await write(walletClient, FUNDER_ACCOUNT, token, tokenAbi, "approve", [sourceRouter, parseEther("1000")]);
 
@@ -145,7 +160,7 @@ describe("EVMChainAdapter (Anvil)", () => {
     const { messageId } = await adapter.sendPayment({
       sender: FUNDER,
       token,
-      destToken: ("0x" + "ab".repeat(32)) as Hex,
+      destToken: DEST_TOKEN,
       amount: parseEther("10"),
       recipient: RECIPIENT,
       destChainId: 1500,
@@ -162,7 +177,7 @@ describe("EVMChainAdapter (Anvil)", () => {
     const { escrowAddress } = await adapter.streamPayment({
       sender: FUNDER,
       token,
-      destToken: ("0x" + "cd".repeat(32)) as Hex,
+      destToken: DEST_TOKEN,
       amount: parseEther("100"),
       recipient: RECIPIENT,
       destChainId: 1500,
@@ -184,7 +199,7 @@ describe("EVMChainAdapter (Anvil)", () => {
     const { escrowAddress } = await adapter.createMilestonePayment({
       sender: FUNDER,
       token,
-      destToken: ("0x" + "ef".repeat(32)) as Hex,
+      destToken: DEST_TOKEN,
       amount: parseEther("100"),
       recipient: RECIPIENT,
       destChainId: 1500,

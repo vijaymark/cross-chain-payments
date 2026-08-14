@@ -24,12 +24,21 @@ contract PaymentRouter is IBridgeReceiver {
     error PaymentRouter__TimeoutInPast();
     error PaymentRouter__WrongDestChain();
     error PaymentRouter__Replay();
+    error PaymentRouter__TokenNotAllowed();
 
     /// @notice Chain id of the chain this router is deployed on.
     uint256 public immutable sourceChainId;
 
     address public owner;
     IBridgeAdapter public bridge;
+
+    /// @notice source token => dest chain id => canonical dest token (bytes32).
+    /// Prevents a funder from funding with one token while claiming a different
+    /// (possibly valuable) destination token in the cross-chain message.
+    mapping(address => mapping(uint256 => bytes32)) public tokenMap;
+
+    /// @notice dest token (bytes32) => allowed to be announced on this chain.
+    mapping(bytes32 => bool) public allowedDestTokens;
 
     /// @notice sender => next nonce to use.
     mapping(address => uint256) public nonces;
@@ -82,6 +91,26 @@ contract PaymentRouter is IBridgeReceiver {
 
     function setBridge(address _bridge) external onlyOwner {
         bridge = IBridgeAdapter(_bridge);
+    }
+
+    /// @notice Register the canonical destination token for a source token on
+    /// a destination chain. Only the registered `destToken` may be claimed when
+    /// funding a payment with `sourceToken`.
+    function setTokenMapping(address sourceToken, uint256 destChainId, bytes32 destToken)
+        external
+        onlyOwner
+    {
+        tokenMap[sourceToken][destChainId] = destToken;
+    }
+
+    function removeTokenMapping(address sourceToken, uint256 destChainId) external onlyOwner {
+        delete tokenMap[sourceToken][destChainId];
+    }
+
+    /// @notice Allow/disallow a destination token id on this chain (checked in
+    /// `receiveMessage`).
+    function setAllowedDestToken(bytes32 destToken, bool allowed) external onlyOwner {
+        allowedDestTokens[destToken] = allowed;
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
@@ -137,6 +166,7 @@ contract PaymentRouter is IBridgeReceiver {
         if (amount == 0) revert PaymentRouter__ZeroAmount();
         if (recipient == address(0)) revert PaymentRouter__ZeroRecipient();
         if (timeout <= block.timestamp) revert PaymentRouter__TimeoutInPast();
+        if (tokenMap[token][destChainId] != destToken) revert PaymentRouter__TokenNotAllowed();
 
         uint256 nonce = _nextNonce(msg.sender);
         messageId = _buildAndSend(
@@ -185,6 +215,7 @@ contract PaymentRouter is IBridgeReceiver {
         if (recipient == address(0)) revert PaymentRouter__ZeroRecipient();
         if (duration == 0) revert PaymentRouter__ZeroDuration();
         if (timeout <= block.timestamp) revert PaymentRouter__TimeoutInPast();
+        if (tokenMap[token][destChainId] != destToken) revert PaymentRouter__TokenNotAllowed();
 
         uint256 ratePerSecond = amount / duration;
         uint256 nonce = _nextNonce(msg.sender);
@@ -220,6 +251,7 @@ contract PaymentRouter is IBridgeReceiver {
         if (amount == 0) revert PaymentRouter__ZeroAmount();
         if (recipient == address(0)) revert PaymentRouter__ZeroRecipient();
         if (timeout <= block.timestamp) revert PaymentRouter__TimeoutInPast();
+        if (tokenMap[token][destChainId] != destToken) revert PaymentRouter__TokenNotAllowed();
 
         uint256 nonce = _nextNonce(msg.sender);
         messageId = _buildAndSend(
@@ -254,6 +286,7 @@ contract PaymentRouter is IBridgeReceiver {
             abi.decode(payload, (Types.CrossChainMessage));
 
         if (message.destChainId != sourceChainId) revert PaymentRouter__WrongDestChain();
+        if (!allowedDestTokens[message.token]) revert PaymentRouter__TokenNotAllowed();
         if (delivered[message.sourceChainId][message.nonce]) revert PaymentRouter__Replay();
 
         delivered[message.sourceChainId][message.nonce] = true;

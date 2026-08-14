@@ -58,6 +58,10 @@ fn setup() -> TestEnv {
     PaymentRouterClient::new(&env, &source_router).set_bridge(&bridge);
     PaymentRouterClient::new(&env, &dest_router).set_bridge(&bridge);
 
+    // Register the mock token on both routers' allowlists.
+    PaymentRouterClient::new(&env, &source_router).set_allowed_token(&token, &true);
+    PaymentRouterClient::new(&env, &dest_router).set_allowed_token(&token, &true);
+
     TestEnv {
         env,
         sender,
@@ -166,6 +170,24 @@ fn test_receive_message_replay_rejected() {
     let dest = PaymentRouterClient::new(env, &t.dest_router);
     dest.receive_message(&message); // ok
     dest.receive_message(&message); // replay -> panic
+}
+
+#[test]
+#[should_panic(expected = "token not allowed")]
+fn test_receive_message_token_not_allowed() {
+    let t = setup();
+    let env = &t.env;
+    let message = CrossChainMessage {
+        nonce: 0,
+        source_chain_id: SOURCE_CHAIN,
+        dest_chain_id: DEST_CHAIN,
+        token: Address::generate(env), // not on the allowlist
+        amount: 100,
+        recipient: t.recipient.clone(),
+        mode: PaymentMode::OneTime,
+        metadata: Bytes::new(env),
+    };
+    PaymentRouterClient::new(env, &t.dest_router).receive_message(&message);
 }
 
 #[test]

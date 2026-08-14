@@ -24,6 +24,7 @@ const NONCES: Symbol = soroban_sdk::symbol_short!("nonces");
 const DELIVERED: Symbol = soroban_sdk::symbol_short!("delivered");
 const LOCKS: Symbol = soroban_sdk::symbol_short!("locks");
 const ANNOUNCED: Symbol = soroban_sdk::symbol_short!("announced");
+const ALLOWED_TOKENS: Symbol = soroban_sdk::symbol_short!("tokens");
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -67,6 +68,24 @@ impl PaymentRouter {
         env.storage().instance().set(&OWNER, &new_owner);
     }
 
+    /// Allow/disallow a token on this chain. Checked when funding a payment and
+    /// when announcing an inbound message, preventing spoofed token claims.
+    pub fn set_allowed_token(env: Env, token: Address, allowed: bool) {
+        let owner: Address = env.storage().instance().get(&OWNER).unwrap();
+        owner.require_auth();
+
+        let mut allowed_tokens: Map<Address, bool> =
+            env.storage().instance().get(&ALLOWED_TOKENS).unwrap_or(Map::new(&env));
+        allowed_tokens.set(token, allowed);
+        env.storage().instance().set(&ALLOWED_TOKENS, &allowed_tokens);
+    }
+
+    pub fn is_token_allowed(env: Env, token: Address) -> bool {
+        let allowed_tokens: Map<Address, bool> =
+            env.storage().instance().get(&ALLOWED_TOKENS).unwrap_or(Map::new(&env));
+        allowed_tokens.get(token).unwrap_or(false)
+    }
+
     // ---- one-time payments ----
 
     pub fn send_payment(
@@ -81,6 +100,7 @@ impl PaymentRouter {
         sender.require_auth();
         assert!(amount > 0, "zero amount");
         assert!(timeout > env.ledger().timestamp(), "timeout in past");
+        assert!(Self::is_token_allowed(env.clone(), token.clone()), "token not allowed");
 
         let nonce = Self::next_nonce(&env, &sender);
         let message = CrossChainMessage {
@@ -168,6 +188,7 @@ impl PaymentRouter {
         assert!(amount > 0, "zero amount");
         assert!(duration > 0, "zero duration");
         assert!(timeout > env.ledger().timestamp(), "timeout in past");
+        assert!(Self::is_token_allowed(env.clone(), token.clone()), "token not allowed");
 
         let nonce = Self::next_nonce(&env, &sender);
         let message = CrossChainMessage {
@@ -214,6 +235,7 @@ impl PaymentRouter {
         sender.require_auth();
         assert!(amount > 0, "zero amount");
         assert!(timeout > env.ledger().timestamp(), "timeout in past");
+        assert!(Self::is_token_allowed(env.clone(), token.clone()), "token not allowed");
 
         let nonce = Self::next_nonce(&env, &sender);
         let message = CrossChainMessage {
@@ -259,6 +281,7 @@ impl PaymentRouter {
         bridge.require_auth();
 
         assert!(message.dest_chain_id == Self::chain_id(env.clone()), "wrong dest chain");
+        assert!(Self::is_token_allowed(env.clone(), message.token.clone()), "token not allowed");
 
         let mut delivered: Map<(u32, u64), bool> =
             env.storage().instance().get(&DELIVERED).unwrap_or(Map::new(&env));
