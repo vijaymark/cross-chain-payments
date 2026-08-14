@@ -1,4 +1,4 @@
-//! Shared protocol types for cross-chain-payments.
+//! Shared protocol types for IPay.
 //!
 //! These mirror `contracts/src/Types.sol` and `docs/PROTOCOL_SPEC.md`. On
 //! Soroban, `token` and `recipient` use the native 32-byte `Address` type; the

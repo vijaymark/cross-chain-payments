@@ -1,6 +1,6 @@
 # Protocol Specification
 
-**cross-chain-payments** — non-custodial, open-source routing layer for grant,
+**IPay** — non-custodial, open-source routing layer for grant,
 salary, and donation payments across blockchain networks.
 
 - Version: `0.1.0` (MVP, unaudited)

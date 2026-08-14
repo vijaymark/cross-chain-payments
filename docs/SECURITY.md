@@ -3,7 +3,7 @@
 > **These contracts are unaudited.** Do not deploy to mainnet or use with
 > real funds. The MVP is intended for local and testnet development only.
 
-This document describes the known threat model for **cross-chain-payments**,
+This document describes the known threat model for **IPay**,
 how each risk is mitigated in the current code, and how to report
 vulnerabilities.
 

@@ -1,5 +1,5 @@
 {
-  "name": "@cross-chain-payments/sdk",
+  "name": "@ipay/sdk",
   "version": "0.1.0",
   "description": "Chain-agnostic client for routing grant, salary, and donation payments across blockchains.",
   "license": "MIT",

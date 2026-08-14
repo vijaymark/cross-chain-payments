@@ -7,7 +7,7 @@ import {
   CHAIN_IDS,
   CrossChainClient,
   type PaymentStatus,
-} from "@cross-chain-payments/sdk";
+} from "@ipay/sdk";
 
 type Mode = "one-time" | "stream" | "milestone";
 
@@ -55,7 +55,7 @@ export default function Home() {
 
     const { createPublicClient, createWalletClient, custom, http, parseEther } = await import("viem");
     const { foundry } = await import("viem/chains");
-    const { EVMChainAdapter } = await import("@cross-chain-payments/sdk");
+    const { EVMChainAdapter } = await import("@ipay/sdk");
 
     const eth = (window as unknown as { ethereum?: EIP1193Provider }).ethereum;
     const transport = eth ? custom(eth) : http(rpcUrl);
@@ -117,7 +117,7 @@ export default function Home() {
 
   return (
     <main>
-      <h1>cross-chain-payments</h1>
+      <h1>IPay</h1>
       <p className="subtitle">
         Reference frontend: route a grant, salary, or donation from Ethereum to
         another chain in a single flow.

@@ -21,7 +21,7 @@ NETWORK_ARGS=(--network "$SOROBAN_NETWORK" --source "$SOROBAN_SECRET")
 echo "Building Soroban contracts..."
 cargo build --release --target wasm32v1-none
 
-WASM=soroban/target/wasm32v1-none/release/cross_chain_payments.wasm
+WASM=soroban/target/wasm32v1-none/release/ipay.wasm
 if [[ ! -f "$WASM" ]]; then
   echo "Error: wasm not found at $WASM" >&2
   exit 1

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @notice Shared protocol types for cross-chain-payments.
+/// @notice Shared protocol types for IPay.
 /// See docs/PROTOCOL_SPEC.md for the canonical definitions.
 library Types {
     /// @notice Payment primitives supported by the protocol.

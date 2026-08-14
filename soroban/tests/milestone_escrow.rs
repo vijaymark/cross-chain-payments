@@ -1,4 +1,4 @@
-use cross_chain_payments::{
+use ipay::{
     milestone_escrow::{MilestoneEscrow, MilestoneEscrowClient},
     mock_token::{MockToken, MockTokenClient},
     types::ApprovalMode,

@@ -1,5 +1,5 @@
 //! Axelar GMP bridge adapter for the Soroban (Stellar) side of
-//! cross-chain-payments.
+//! IPay.
 //!
 //! This contract is the Soroban mirror of `contracts/src/AxelarBridgeAdapter.sol`.
 //! It sits between the payment router and Axelar's GMP gateway:

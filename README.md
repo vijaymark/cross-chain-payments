@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/logo/logo.svg" alt="cross-chain-payments logo" width="400" />
+  <img src="assets/logo/logo.svg" alt="IPay logo" width="400" />
 </p>
 
-<h1 align="center">cross-chain-payments</h1>
+<h1 align="center">IPay</h1>
 
 <p align="center">
   <strong>Non-custodial, open-source routing for grant, salary, and donation payments across blockchains.</strong>
@@ -10,10 +10,10 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
-  <a href="https://github.com/vijaymark/cross-chain-payments/actions/workflows/contracts-test.yml"><img src="https://github.com/vijaymark/cross-chain-payments/actions/workflows/contracts-test.yml/badge.svg" alt="Contracts CI" /></a>
-  <a href="https://github.com/vijaymark/cross-chain-payments/actions/workflows/ci.yml"><img src="https://github.com/vijaymark/cross-chain-payments/actions/workflows/ci.yml/badge.svg" alt="SDK CI" /></a>
-  <a href="https://codecov.io/gh/vijaymark/cross-chain-payments"><img src="https://img.shields.io/badge/coverage-90%25-brightgreen.svg" alt="Coverage" /></a>
-  <a href="https://github.com/vijaymark/cross-chain-payments"><img src="https://img.shields.io/badge/status-unaudited%20MVP-orange.svg" alt="Status" /></a>
+  <a href="https://github.com/vijaymark/ipay/actions/workflows/contracts-test.yml"><img src="https://github.com/vijaymark/ipay/actions/workflows/contracts-test.yml/badge.svg" alt="Contracts CI" /></a>
+  <a href="https://github.com/vijaymark/ipay/actions/workflows/ci.yml"><img src="https://github.com/vijaymark/ipay/actions/workflows/ci.yml/badge.svg" alt="SDK CI" /></a>
+  <a href="https://codecov.io/gh/vijaymark/ipay"><img src="https://img.shields.io/badge/coverage-90%25-brightgreen.svg" alt="Coverage" /></a>
+  <a href="https://github.com/vijaymark/ipay"><img src="https://img.shields.io/badge/status-unaudited%20MVP-orange.svg" alt="Status" /></a>
 </p>
 
 ---
@@ -25,7 +25,7 @@ person or project that lives on a *different* chain. Today that means one
 party manually bridges assets, juggles wrapped tokens, or funnels everything
 through a single canonical chain — adding steps, fees, and custody risk.
 
-**cross-chain-payments** is the routing layer for those payments. A funder on
+**IPay** is the routing layer for those payments. A funder on
 Ethereum can pay a recipient on Stellar (Soroban) in a single flow, and the
 protocol handles the cross-chain delivery behind a bridge-agnostic adapter —
 without either side ever touching a bridge UI.
@@ -85,7 +85,7 @@ message.
 ## Repo layout
 
 ```
-cross-chain-payments/
+ipay/
 ├── contracts/        Solidity (Foundry) — router, escrows, mock + Axelar bridge adapters
 ├── soroban/          Rust (Soroban) — mirror of the EVM contracts
 ├── soroban-axelar/   Rust (Soroban) — Axelar GMP bridge adapter
@@ -125,21 +125,21 @@ The repo is an npm workspace (`sdk/` + `app/`); install once at the root.
 
 ```bash
 npm install
-npm test -w @cross-chain-payments/sdk   # 10 tests (incl. Anvil integration)
-npm run build -w @cross-chain-payments/sdk
+npm test -w @ipay/sdk   # 10 tests (incl. Anvil integration)
+npm run build -w @ipay/sdk
 ```
 
 ### 4. Reference frontend
 
 ```bash
-npm run build -w @cross-chain-payments/sdk   # app consumes the built SDK
-npm run dev -w @cross-chain-payments/app
+npm run build -w @ipay/sdk   # app consumes the built SDK
+npm run dev -w @ipay/app
 ```
 
 ### 5. SDK usage
 
 ```ts
-import { CrossChainClient, EVMChainAdapter, CHAIN_IDS } from "@cross-chain-payments/sdk";
+import { CrossChainClient, EVMChainAdapter, CHAIN_IDS } from "@ipay/sdk";
 
 const client = new CrossChainClient([new EVMChainAdapter({ /* ... */ })]);
 

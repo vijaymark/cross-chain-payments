@@ -46,16 +46,16 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint -w @cross-chain-payments/sdk
+        run: npm run lint -w @ipay/sdk
 
       - name: Typecheck
-        run: npm run typecheck -w @cross-chain-payments/sdk
+        run: npm run typecheck -w @ipay/sdk
 
       - name: Build
-        run: npm run build -w @cross-chain-payments/sdk
+        run: npm run build -w @ipay/sdk
 
       - name: Test
-        run: npm test -w @cross-chain-payments/sdk
+        run: npm test -w @ipay/sdk
         env:
           ANVIL_BIN: anvil
 
@@ -77,7 +77,7 @@ jobs:
         run: npm ci
 
       - name: Build SDK (app consumes its dist)
-        run: npm run build -w @cross-chain-payments/sdk
+        run: npm run build -w @ipay/sdk
 
       - name: Build app
-        run: npm run build -w @cross-chain-payments/app
+        run: npm run build -w @ipay/app

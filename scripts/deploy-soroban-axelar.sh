@@ -25,7 +25,7 @@ cd "$(dirname "$0")/.."
 echo "Building Soroban Axelar bridge..."
 (cd soroban-axelar && cargo build --release --target wasm32v1-none)
 
-WASM=soroban-axelar/target/wasm32v1-none/release/cross_chain_payments_axelar.wasm
+WASM=soroban-axelar/target/wasm32v1-none/release/ipay_axelar.wasm
 if [[ ! -f "$WASM" ]]; then
   echo "Error: wasm not found at $WASM" >&2
   exit 1

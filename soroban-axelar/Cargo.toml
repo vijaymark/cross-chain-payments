@@ -1,9 +1,9 @@
 [package]
-name = "cross-chain-payments-axelar"
+name = "ipay-axelar"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "Axelar GMP bridge adapter for the cross-chain-payments Soroban router"
+description = "Axelar GMP bridge adapter for the IPay Soroban router"
 publish = false
 
 [lib]

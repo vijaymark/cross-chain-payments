@@ -1,4 +1,4 @@
-use cross_chain_payments::{
+use ipay::{
     milestone_escrow::MilestoneEscrowClient,
     mock_bridge::{MockBridgeAdapter, MockBridgeAdapterClient},
     mock_token::{MockToken, MockTokenClient},
@@ -15,7 +15,7 @@ const DEST_CHAIN: u32 = 1500;
 
 // CI builds the wasm before running tests (see .github/workflows/contracts-test.yml).
 // include_bytes! resolves this path at compile time, so the wasm must exist first.
-const WASM: &[u8] = include_bytes!("../target/wasm32v1-none/release/cross_chain_payments.wasm");
+const WASM: &[u8] = include_bytes!("../target/wasm32v1-none/release/ipay.wasm");
 
 struct TestEnv {
     env: Env,

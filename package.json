@@ -1,5 +1,5 @@
 {
-  "name": "cross-chain-payments",
+  "name": "ipay",
   "version": "0.1.0",
   "private": true,
   "description": "Non-custodial, open-source routing for grant, salary, and donation payments across blockchains.",

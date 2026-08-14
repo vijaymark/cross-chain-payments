@@ -1,5 +1,5 @@
 /**
- * Shared types for the cross-chain-payments SDK. These mirror the canonical
+ * Shared types for the IPay SDK. These mirror the canonical
  * message format in `docs/PROTOCOL_SPEC.md` §4 and the on-chain enums.
  */
 

@@ -1,7 +1,7 @@
 # Axelar bridge adapter
 
 This document describes the real-bridge integration for
-**cross-chain-payments** using [Axelar General Message Passing (GMP)][axelar-gmp].
+**IPay** using [Axelar General Message Passing (GMP)][axelar-gmp].
 It is Phase 1 of [`ROADMAP.md`](ROADMAP.md).
 
 > **Status:** adapters implemented and locally tested (EVM) / compiled

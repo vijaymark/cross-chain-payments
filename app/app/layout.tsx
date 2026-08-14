@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "cross-chain-payments",
+  title: "IPay",
   description:
     "Route grant, salary, and donation payments across blockchains without managing bridges.",
 };

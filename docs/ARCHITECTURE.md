@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the components of **cross-chain-payments** and how a
+This document describes the components of **IPay** and how a
 payment flows through them. It is the implementation companion to
 [`PROTOCOL_SPEC.md`](PROTOCOL_SPEC.md).
 

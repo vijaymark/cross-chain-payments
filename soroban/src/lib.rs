@@ -1,4 +1,4 @@
-//! Soroban contracts for cross-chain-payments.
+//! Soroban contracts for IPay.
 //!
 //! Mirrors the EVM contracts in `contracts/src` (see `docs/PROTOCOL_SPEC.md`).
 //!

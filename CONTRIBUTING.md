@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping build **cross-chain-payments**! This guide covers setup,
+Thanks for helping build **IPay**! This guide covers setup,
 conventions, and how to find beginner-friendly work.
 
 ## Setup
@@ -22,8 +22,8 @@ rustup target add wasm32v1-none
 Then clone and install dependencies:
 
 ```bash
-git clone https://github.com/vijaymark/cross-chain-payments.git
-cd cross-chain-payments
+git clone https://github.com/vijaymark/ipay.git
+cd ipay
 
 # npm workspace (sdk + app)
 npm install
@@ -41,8 +41,8 @@ cd contracts && forge test
 cd soroban && cargo test
 
 # TypeScript SDK
-npm run typecheck -w @cross-chain-payments/sdk
-npm test -w @cross-chain-payments/sdk
+npm run typecheck -w @ipay/sdk
+npm test -w @ipay/sdk
 ```
 
 Run all three before opening a PR.
@@ -72,7 +72,7 @@ Run all three before opening a PR.
 
 ## Finding good-first-issue work
 
-Issues labeled [`good first issue`](https://github.com/vijaymark/cross-chain-payments/labels/good%20first%20issue)
+Issues labeled [`good first issue`](https://github.com/vijaymark/ipay/labels/good%20first%20issue)
 are scoped for newcomers. Common starter tasks:
 
 - Adding a missing revert/guard test to push coverage higher.

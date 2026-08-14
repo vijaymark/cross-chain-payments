@@ -1,40 +1,21 @@
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="cross-chain-payments">
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="IPay">
   <defs>
-    <linearGradient id="ccpGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#4f8cff"/>
-      <stop offset="100%" stop-color="#9b5cff"/>
-    </linearGradient>
-    <linearGradient id="ccpGrad2" x1="1" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#9b5cff"/>
-      <stop offset="100%" stop-color="#4f8cff"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#9333ea"/>
     </linearGradient>
   </defs>
 
-  <!-- dark background -->
-  <rect width="512" height="512" rx="112" fill="#0b1020"/>
+  <rect width="512" height="512" rx="120" fill="#0b1020"/>
 
-  <!-- interlocking chain links -->
-  <!-- link 1 (back, lower-left to upper-right) -->
-  <path d="M150 236
-           a64 64 0 0 1 64 -64
-           h8
-           a64 64 0 0 1 64 64
-           v40
-           a64 64 0 0 1 -64 64
-           h-8
-           a64 64 0 0 1 -64 -64
-           z"
-        fill="none" stroke="url(#ccpGrad)" stroke-width="44" stroke-linejoin="round"/>
+  <!-- "i" stem -->
+  <rect x="212" y="226" width="56" height="176" rx="28" fill="url(#g)"/>
 
-  <!-- link 2 (front, upper-left to lower-right) -->
-  <path d="M236 150
-           a64 64 0 0 1 64 -64
-           h8
-           a64 64 0 0 1 64 64
-           v40
-           a64 64 0 0 1 -64 64
-           h-8
-           a64 64 0 0 1 -64 -64
-           z"
-        fill="none" stroke="url(#ccpGrad2)" stroke-width="44" stroke-linejoin="round"/>
+  <!-- "i" dot (coin) -->
+  <circle cx="240" cy="150" r="60" fill="url(#g)"/>
+  <circle cx="240" cy="150" r="38" fill="none" stroke="#0b1020" stroke-width="14"/>
+
+  <!-- payment arrow -->
+  <path d="M314 320 h86" stroke="#e2e8f0" stroke-width="16" stroke-linecap="round"/>
+  <path d="M400 320 L374 294 M400 320 L374 346" stroke="#e2e8f0" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

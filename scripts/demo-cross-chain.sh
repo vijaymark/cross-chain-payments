@@ -15,7 +15,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-echo "=== cross-chain-payments two-testnet demo ==="
+echo "=== IPay two-testnet demo ==="
 echo "Chain A (source): Ethereum Sepolia (chain id 11155111)"
 echo "Chain B (dest)  : Stellar testnet  (chain id 1500, Axelar name stellar-2025-q1)"
 echo

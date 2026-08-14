@@ -1,4 +1,4 @@
-use cross_chain_payments::{
+use ipay::{
     mock_token::{MockToken, MockTokenClient},
     stream_escrow::{StreamEscrow, StreamEscrowClient},
 };
