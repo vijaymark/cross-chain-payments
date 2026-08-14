@@ -21,6 +21,8 @@ import { EVMChainAdapter } from "../src/chains/evm.js";
 import { ApprovalMode, EscrowState } from "../src/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+// These artifacts are produced by `forge build` in contracts/; CI runs that step
+// before the tests (see .github/workflows/ci.yml).
 const OUT = join(__dirname, "../../contracts/out");
 
 const RPC_URL = "http://127.0.0.1:8545";

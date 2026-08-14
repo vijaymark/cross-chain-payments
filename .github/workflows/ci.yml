@@ -1,6 +1,7 @@
 name: SDK CI
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "sdk/**"

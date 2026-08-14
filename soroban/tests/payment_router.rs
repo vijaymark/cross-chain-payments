@@ -13,6 +13,8 @@ use soroban_sdk::{vec, Address, Bytes, Env, String};
 const SOURCE_CHAIN: u32 = 1;
 const DEST_CHAIN: u32 = 1500;
 
+// CI builds the wasm before running tests (see .github/workflows/contracts-test.yml).
+// include_bytes! resolves this path at compile time, so the wasm must exist first.
 const WASM: &[u8] = include_bytes!("../target/wasm32v1-none/release/cross_chain_payments.wasm");
 
 struct TestEnv {
