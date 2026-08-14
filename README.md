@@ -86,8 +86,9 @@ message.
 
 ```
 cross-chain-payments/
-├── contracts/        Solidity (Foundry) — router, escrows, bridge adapter
+├── contracts/        Solidity (Foundry) — router, escrows, mock + Axelar bridge adapters
 ├── soroban/          Rust (Soroban) — mirror of the EVM contracts
+├── soroban-axelar/   Rust (Soroban) — Axelar GMP bridge adapter
 ├── sdk/              TypeScript SDK — chain-agnostic client
 ├── app/              Reference Next.js frontend
 ├── docs/             ARCHITECTURE, PROTOCOL_SPEC, SECURITY, ROADMAP
@@ -158,8 +159,9 @@ responsible-disclosure instructions in [`SECURITY.md`](SECURITY.md) and
 
 ## Roadmap
 
-MVP (mock bridge) → real-bridge testnet integration → third chain → external
-audit → mainnet. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+MVP (mock bridge) → real-bridge testnet integration (Axelar GMP adapter is
+implemented — see [`docs/AXELAR_BRIDGE.md`](docs/AXELAR_BRIDGE.md)) → third
+chain → external audit → mainnet. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## License
 

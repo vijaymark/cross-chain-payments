@@ -39,8 +39,9 @@ bridge and is fully covered by on-chain tests.
 
 - Contracts are **unaudited**; see the disclaimer above.
 - The `MockBridgeAdapter` is for development only and provides no
-  authenticity — a real adapter (LayerZero/Axelar/Wormhole) must be integrated
-  and audited before any real value is routed.
+  authenticity. An Axelar GMP adapter is now implemented
+  (`AxelarBridgeAdapter`, `soroban-axelar/`) but is **unaudited**; it must be
+  audited before any real value is routed.
 - Cross-chain token mapping (allowlists, wrapped-asset verification) is not
   implemented.
 - No pausability / emergency circuit-breaker exists yet.

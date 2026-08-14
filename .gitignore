@@ -26,6 +26,7 @@ contracts/.env
 
 # ---- Rust / Cargo ----
 soroban/target/
+soroban-axelar/target/
 **/*.rs.bk
 Cargo.lock.orig
 
@@ -33,6 +34,8 @@ Cargo.lock.orig
 .soroban/
 soroban/.soroban/
 soroban/test_snapshots/
+soroban-axelar/.soroban/
+soroban-axelar/test_snapshots/
 
 # ---- Env / secrets ----
 .env

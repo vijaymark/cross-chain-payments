@@ -17,12 +17,18 @@ earlier ones are complete and green.
 **Exit criteria:** all test suites green; protocol spec and architecture docs
 match the code.
 
-## Phase 1 — Real-bridge testnet integration 🔜
+## Phase 1 — Real-bridge testnet integration 🚧
 
-- Implement a production `IBridgeAdapter` for **LayerZero** or **Axelar**.
-- Wire the adapter to a live testnet (Ethereum Sepolia ↔ Stellar testnet).
-- Deploy routers + escrows to both testnets; produce a working end-to-end demo.
-- Add token allowlist mapping (`sourceToken → destToken`) in the router.
+**In progress.**
+
+- ✅ Implement a production `IBridgeAdapter` for **Axelar** GMP
+  (`contracts/src/AxelarBridgeAdapter.sol`, EVM-tested; `soroban-axelar/`,
+  compiled). See [`AXELAR_BRIDGE.md`](AXELAR_BRIDGE.md).
+- ⬜ Wire the adapter to a live testnet (Ethereum Sepolia ↔ Stellar testnet) —
+  deploy scripts are ready (`scripts/deploy-*-axelar.sh`, `scripts/demo-cross-chain.sh`);
+  needs funded testnet accounts.
+- ⬜ Produce a working end-to-end demo and exercise the timeout fallback.
+- ⬜ Add token allowlist mapping (`sourceToken → destToken`) in the router.
 
 **Exit criteria:** an end-to-end payment is routed across two testnets and
 confirmed on-chain, with the timeout fallback exercised.

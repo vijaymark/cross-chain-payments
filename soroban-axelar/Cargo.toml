@@ -1,0 +1,33 @@
+[package]
+name = "cross-chain-payments-axelar"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Axelar GMP bridge adapter for the cross-chain-payments Soroban router"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+stellar-axelar-gateway = { git = "https://github.com/axelarnetwork/axelar-amplifier-stellar", rev = "1c9026f47a823cd5937b92a04cf3e5b5e06f1238", subdir = "contracts/stellar-axelar-gateway", features = ["library"] }
+stellar-axelar-gas-service = { git = "https://github.com/axelarnetwork/axelar-amplifier-stellar", rev = "1c9026f47a823cd5937b92a04cf3e5b5e06f1238", subdir = "contracts/stellar-axelar-gas-service", features = ["library"] }
+stellar-axelar-std = { git = "https://github.com/axelarnetwork/axelar-amplifier-stellar", rev = "1c9026f47a823cd5937b92a04cf3e5b5e06f1238", subdir = "packages/stellar-axelar-std", features = ["derive"] }
+
+[dev-dependencies]
+stellar-axelar-std = { git = "https://github.com/axelarnetwork/axelar-amplifier-stellar", rev = "1c9026f47a823cd5937b92a04cf3e5b5e06f1238", subdir = "packages/stellar-axelar-std", features = ["testutils", "derive"] }
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
+
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true

@@ -87,8 +87,15 @@ The transport abstraction. The router only ever calls `sendMessage` /
 `receiveMessage`; it never knows which bridge (LayerZero, Axelar, Wormhole, or
 the in-memory mock) carries a message. The `MockBridgeAdapter` is a
 per-chain router registry that simulates delivery for local/testnet
-development. A real adapter can be dropped in later without touching escrow
-logic.
+development.
+
+### Axelar adapter (`AxelarBridgeAdapter`, `axelar_bridge`)
+
+A production `IBridgeAdapter` backed by Axelar GMP. On the source chain it
+calls `gateway.callContract(...)`; on the destination chain it implements
+`IAxelarExecutable.execute(...)` and forwards the payload to the router. The
+Soroban mirror lives in a separate crate (`soroban-axelar/`) because the Axelar
+contract stack pins an older `soroban-sdk`. See [`AXELAR_BRIDGE.md`](AXELAR_BRIDGE.md).
 
 ### TypeScript SDK (`sdk/`)
 
