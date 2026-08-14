@@ -120,14 +120,22 @@ cargo build --release --target wasm32v1-none
 
 ### 3. TypeScript SDK
 
+The repo is an npm workspace (`sdk/` + `app/`); install once at the root.
+
 ```bash
-cd sdk
 npm install
-npm test            # 10 tests (incl. Anvil integration)
-npm run build
+npm test -w @cross-chain-payments/sdk   # 10 tests (incl. Anvil integration)
+npm run build -w @cross-chain-payments/sdk
 ```
 
-### 4. SDK usage
+### 4. Reference frontend
+
+```bash
+npm run build -w @cross-chain-payments/sdk   # app consumes the built SDK
+npm run dev -w @cross-chain-payments/app
+```
+
+### 5. SDK usage
 
 ```ts
 import { CrossChainClient, EVMChainAdapter, CHAIN_IDS } from "@cross-chain-payments/sdk";

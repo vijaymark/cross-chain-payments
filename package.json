@@ -1,0 +1,11 @@
+{
+  "name": "cross-chain-payments",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Non-custodial, open-source routing for grant, salary, and donation payments across blockchains.",
+  "license": "MIT",
+  "workspaces": [
+    "sdk",
+    "app"
+  ]
+}

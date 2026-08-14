@@ -25,8 +25,10 @@ Then clone and install dependencies:
 git clone https://github.com/vijaymark/cross-chain-payments.git
 cd cross-chain-payments
 
+# npm workspace (sdk + app)
+npm install
+
 cd contracts && forge install foundry-rs/forge-std
-cd ../sdk      && npm install
 ```
 
 ## Development loop
@@ -39,7 +41,8 @@ cd contracts && forge test
 cd soroban && cargo test
 
 # TypeScript SDK
-cd sdk && npm run typecheck && npm test
+npm run typecheck -w @cross-chain-payments/sdk
+npm test -w @cross-chain-payments/sdk
 ```
 
 Run all three before opening a PR.
