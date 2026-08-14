@@ -32,6 +32,7 @@ Cargo.lock.orig
 # ---- Soroban ----
 .soroban/
 soroban/.soroban/
+soroban/test_snapshots/
 
 # ---- Env / secrets ----
 .env
