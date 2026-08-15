@@ -57,6 +57,7 @@ Canonical field order (ABI-encoded on EVM, `env.bytes()`-packed on Soroban):
 nonce          uint256   monotonically increasing, per (sourceChainId, sender)
 sourceChainId  uint256   chain that originates the message
 destChainId    uint256   chain that must receive the message
+sender         bytes     source-chain funder, encoded per-chain (20 bytes EVM, 32 bytes Soroban)
 token          bytes32   canonical token identifier (address on EVM, contract id on Soroban)
 amount         uint256   base-unit amount (e.g. wei / stroops)
 recipient      bytes     destination address encoded per-chain (20 bytes EVM, 32 bytes Soroban)
@@ -94,9 +95,9 @@ releaseDeadline uint256  timestamp after which the sender may claim the timeout 
 - On Soroban the message is encoded with `soroban_sdk::xdr` / `env.bytes()` into
   a `Bytes` blob using the same logical fields.
 - Endianness and integer widths must match (`uint256` ↔ 32 bytes big-endian).
-- `token` and `recipient` are padded left to a fixed width (32 bytes for
-  Soroban, 20 bytes left-padded to 32 for EVM addresses) so both chains can
-  decode a message deterministically.
+- `sender`, `token`, and `recipient` are padded left to a fixed width (32
+  bytes for Soroban, 20 bytes left-padded to 32 for EVM addresses) so both
+  chains can decode a message deterministically.
 
 ---
 
@@ -167,10 +168,11 @@ Created ──────────────► Funded
 - Each sender keeps a `nonce` counter on the **source** chain, incremented on
   every `sendPayment`/`streamPayment`/`createMilestonePayment` call.
 - The router emits `PaymentInitiated(nonce, sourceChainId, destChainId, ...)`.
-- The **destination** router maintains a `deliveredNonces[sourceChainId][sender]`
-  set (or `highestNonce`), and rejects any message whose nonce has already been
-  processed. This guarantees **exactly-once** delivery even if a bridge adapter
-  redelivers a message.
+- The **destination** router maintains a `delivered[sourceChainId][sender][nonce]`
+  set and rejects any message whose `(sourceChainId, sender, nonce)` has already
+  been processed. The `sender` is carried in the message itself, so nonces from
+  different senders never collide. This guarantees **exactly-once** delivery
+  even if a bridge adapter redelivers a message.
 
 ## 7. Timeout-based fallback
 

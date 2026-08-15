@@ -38,6 +38,8 @@ export interface CrossChainMessage {
   nonce: bigint;
   sourceChainId: bigint;
   destChainId: bigint;
+  /** Source-chain funder, per-chain encoded (20B EVM / 32B Soroban). */
+  sender: `0x${string}`;
   token: `0x${string}`;
   amount: bigint;
   recipient: `0x${string}`;

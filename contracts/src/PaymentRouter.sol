@@ -49,8 +49,8 @@ contract PaymentRouter is IBridgeReceiver {
 
     /// @notice sender => next nonce to use.
     mapping(address => uint256) public nonces;
-    /// @notice sourceChainId => nonce => delivered (exactly-once delivery).
-    mapping(uint256 => mapping(uint256 => bool)) public delivered;
+    /// @notice sourceChainId => sender => nonce => delivered (exactly-once delivery).
+    mapping(uint256 => mapping(address => mapping(uint256 => bool))) public delivered;
 
     struct OneTimeLock {
         address sender;
@@ -132,6 +132,21 @@ contract PaymentRouter is IBridgeReceiver {
         nonces[sender] = nonce + 1;
     }
 
+    /// @notice Require that `sourceToken` has an explicitly registered
+    /// canonical `destToken` for `destChainId` and that the caller's
+    /// `destToken` matches it. An unregistered mapping reads as `bytes32(0)`,
+    /// so the zero-check prevents a funder from passing a zero `destToken` to
+    /// bypass the allowlist.
+    function _checkTokenMapping(address sourceToken, uint256 destChainId, bytes32 destToken)
+        internal
+        view
+    {
+        bytes32 registered = tokenMap[sourceToken][destChainId];
+        if (registered == bytes32(0) || registered != destToken) {
+            revert PaymentRouter__TokenNotAllowed();
+        }
+    }
+
     function _buildAndSend(
         uint256 nonce,
         uint256 destChainId,
@@ -147,6 +162,7 @@ contract PaymentRouter is IBridgeReceiver {
             nonce: nonce,
             sourceChainId: sourceChainId,
             destChainId: destChainId,
+            sender: msg.sender,
             token: destToken,
             amount: amount,
             recipient: abi.encodePacked(recipient),
@@ -173,7 +189,7 @@ contract PaymentRouter is IBridgeReceiver {
         if (amount == 0) revert PaymentRouter__ZeroAmount();
         if (recipient == address(0)) revert PaymentRouter__ZeroRecipient();
         if (timeout <= block.timestamp) revert PaymentRouter__TimeoutInPast();
-        if (tokenMap[token][destChainId] != destToken) revert PaymentRouter__TokenNotAllowed();
+        _checkTokenMapping(token, destChainId, destToken);
 
         uint256 nonce = _nextNonce(msg.sender);
         messageId = _buildAndSend(
@@ -222,7 +238,7 @@ contract PaymentRouter is IBridgeReceiver {
         if (recipient == address(0)) revert PaymentRouter__ZeroRecipient();
         if (duration == 0) revert PaymentRouter__ZeroDuration();
         if (timeout <= block.timestamp) revert PaymentRouter__TimeoutInPast();
-        if (tokenMap[token][destChainId] != destToken) revert PaymentRouter__TokenNotAllowed();
+        _checkTokenMapping(token, destChainId, destToken);
 
         uint256 ratePerSecond = amount / duration;
         uint256 nonce = _nextNonce(msg.sender);
@@ -258,7 +274,7 @@ contract PaymentRouter is IBridgeReceiver {
         if (amount == 0) revert PaymentRouter__ZeroAmount();
         if (recipient == address(0)) revert PaymentRouter__ZeroRecipient();
         if (timeout <= block.timestamp) revert PaymentRouter__TimeoutInPast();
-        if (tokenMap[token][destChainId] != destToken) revert PaymentRouter__TokenNotAllowed();
+        _checkTokenMapping(token, destChainId, destToken);
 
         uint256 nonce = _nextNonce(msg.sender);
         messageId = _buildAndSend(
@@ -294,9 +310,9 @@ contract PaymentRouter is IBridgeReceiver {
 
         if (message.destChainId != sourceChainId) revert PaymentRouter__WrongDestChain();
         if (!allowedDestTokens[message.token]) revert PaymentRouter__TokenNotAllowed();
-        if (delivered[message.sourceChainId][message.nonce]) revert PaymentRouter__Replay();
+        if (delivered[message.sourceChainId][message.sender][message.nonce]) revert PaymentRouter__Replay();
 
-        delivered[message.sourceChainId][message.nonce] = true;
+        delivered[message.sourceChainId][message.sender][message.nonce] = true;
         bytes32 messageId = keccak256(payload);
         _announced[messageId] = message;
 

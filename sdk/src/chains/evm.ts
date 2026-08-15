@@ -21,7 +21,7 @@ const routerAbi = parseAbi([
   "function streamPayment(address token, uint256 amount, bytes32 destToken, address recipient, uint256 destChainId, uint256 duration, uint256 timeout) returns (bytes32, address)",
   "function createMilestonePayment(address token, uint256 amount, bytes32 destToken, address recipient, uint256 destChainId, uint256[] trancheAmounts, uint8 approvalMode, address[] approvers, uint256 threshold, address oracle, uint256 releaseDeadline, uint256 timeout) returns (bytes32, address)",
   "function refundOneTime(bytes32 messageId)",
-  "function delivered(uint256 sourceChainId, uint256 nonce) view returns (bool)",
+  "function delivered(uint256 sourceChainId, address sender, uint256 nonce) view returns (bool)",
   "function oneTimeLocks(bytes32 messageId) view returns (address sender, address token, uint256 amount, uint256 timeout, bool settled, bool refunded)",
 ]);
 

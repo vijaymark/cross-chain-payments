@@ -189,7 +189,7 @@ contract PaymentRouterTest is Test {
         Types.CrossChainMessage memory msg1 = destRouter.announced(keccak256(payload));
         assertEq(msg1.amount, 100 ether);
         assertEq(uint256(msg1.mode), uint256(Types.PaymentMode.OneTime));
-        assertTrue(destRouter.delivered(SOURCE_CHAIN, 0), "nonce 0 should be delivered");
+        assertTrue(destRouter.delivered(SOURCE_CHAIN, funder, 0), "nonce 0 should be delivered");
         assertEq(bridge.pending(), 0);
     }
 
@@ -211,6 +211,7 @@ contract PaymentRouterTest is Test {
             nonce: 0,
             sourceChainId: SOURCE_CHAIN,
             destChainId: 999, // not this router's chain
+            sender: funder,
             token: DEST_TOKEN,
             amount: 1 ether,
             recipient: abi.encodePacked(recipient),
@@ -228,6 +229,7 @@ contract PaymentRouterTest is Test {
             nonce: 0,
             sourceChainId: SOURCE_CHAIN,
             destChainId: DEST_CHAIN,
+            sender: funder,
             token: DEST_TOKEN,
             amount: 1 ether,
             recipient: abi.encodePacked(recipient),
@@ -256,11 +258,50 @@ contract PaymentRouterTest is Test {
         );
     }
 
+    /// @notice An unregistered token mapping reads as bytes32(0); passing a
+    /// zero destToken must not slip through the allowlist.
+    function _unmappedToken() internal returns (MockERC20 t) {
+        t = new MockERC20();
+        t.mint(funder, 100 ether);
+        vm.prank(funder);
+        t.approve(address(sourceRouter), 100 ether);
+    }
+
+    function test_sendPayment_zeroDestTokenBypassReverts() public {
+        MockERC20 t = _unmappedToken();
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TokenNotAllowed.selector);
+        sourceRouter.sendPayment(address(t), 100 ether, bytes32(0), recipient, DEST_CHAIN, block.timestamp + 100);
+    }
+
+    function test_streamPayment_zeroDestTokenBypassReverts() public {
+        MockERC20 t = _unmappedToken();
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TokenNotAllowed.selector);
+        sourceRouter.streamPayment(address(t), 100 ether, bytes32(0), recipient, DEST_CHAIN, 100, block.timestamp + 100);
+    }
+
+    function test_createMilestonePayment_zeroDestTokenBypassReverts() public {
+        MockERC20 t = _unmappedToken();
+        uint256[] memory tranches = new uint256[](1);
+        tranches[0] = 100 ether;
+        address[] memory approvers = new address[](1);
+        approvers[0] = address(0xA);
+
+        vm.prank(funder);
+        vm.expectRevert(PaymentRouter.PaymentRouter__TokenNotAllowed.selector);
+        sourceRouter.createMilestonePayment(
+            address(t), 100 ether, bytes32(0), recipient, DEST_CHAIN, tranches,
+            Types.ApprovalMode.Multisig, approvers, 1, address(0), block.timestamp + 1000, block.timestamp + 100
+        );
+    }
+
     function test_receiveMessage_tokenNotAllowedReverts() public {
         Types.CrossChainMessage memory message = Types.CrossChainMessage({
             nonce: 0,
             sourceChainId: SOURCE_CHAIN,
             destChainId: DEST_CHAIN,
+            sender: funder,
             token: bytes32(uint256(0xBADC0DE)), // not allowlisted on dest
             amount: 1 ether,
             recipient: abi.encodePacked(recipient),
@@ -518,6 +559,7 @@ contract PaymentRouterTest is Test {
             nonce: 0,
             sourceChainId: SOURCE_CHAIN,
             destChainId: DEST_CHAIN,
+            sender: funder,
             token: DEST_TOKEN,
             amount: 1 ether,
             recipient: abi.encodePacked(recipient),

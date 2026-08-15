@@ -23,6 +23,7 @@ library Types {
         uint256 nonce;
         uint256 sourceChainId;
         uint256 destChainId;
+        address sender; // source-chain funder; scopes replay protection per sender
         bytes32 token; // canonical token id on source chain (address, left-padded)
         uint256 amount; // base-unit amount
         bytes recipient; // destination address, per-chain encoded (20B EVM / 32B Soroban)
