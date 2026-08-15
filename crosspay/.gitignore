@@ -1,0 +1,13 @@
+# Foundry build artifacts
+cache/
+out/
+broadcast/
+
+# Vendored dependencies (re-clone via `make install-deps`)
+lib/
+
+# Local env / secrets
+.env
+
+# Node (if you install via npm for the LZ packages)
+node_modules/

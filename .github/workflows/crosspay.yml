@@ -1,0 +1,52 @@
+name: CrossPay (LayerZero) CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "crosspay/**"
+  push:
+    branches: [main]
+    paths:
+      - "crosspay/**"
+
+jobs:
+  build-test:
+    name: fmt, build, test, coverage, slither
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crosspay
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install dependencies
+        run: |
+          forge install foundry-rs/forge-std --no-commit
+          forge install OpenZeppelin/openzeppelin-contracts@v5.0.2 --no-commit
+          forge install LayerZero-Labs/devtools --no-commit
+          forge install LayerZero-Labs/LayerZero-v2 --no-commit
+          forge install GNSPS/solidity-bytes-utils --no-commit
+
+      - name: Format check
+        run: forge fmt --check
+
+      - name: Build
+        run: forge build
+
+      - name: Test
+        run: forge test -vvv
+
+      - name: Coverage gate (>=90% on PaymentRouter.sol)
+        run: bash scripts/coverage.sh 90
+
+      # Report-only until findings are triaged; flip to blocking afterwards.
+      - name: Slither (report only)
+        run: |
+          pipx install slither-analyzer
+          slither . --config-file slither.config.json
+        continue-on-error: true
