@@ -222,3 +222,67 @@ fn test_status_transitions() {
     client.release_milestone(&0);
     assert_eq!(client.status(), 3); // PartiallyReleased
 }
+
+#[test]
+#[should_panic(expected = "already initialized")]
+fn test_milestone_init_cannot_reinitialize() {
+    let (env, router, sender, recipient, token) = setup();
+    let approvers = approvers(&env);
+    let escrow = env.register(MilestoneEscrow, ());
+    let deadline = env.ledger().timestamp() + 1000;
+    let client = MilestoneEscrowClient::new(&env, &escrow);
+    client.milestone_init(
+        &router,
+        &sender,
+        &recipient,
+        &token,
+        &AMOUNT,
+        &tranches(&env),
+        &ApprovalMode::Multisig,
+        &approvers,
+        &2u32,
+        &Address::generate(&env),
+        &deadline,
+    );
+    client.milestone_init(
+        &router,
+        &sender,
+        &recipient,
+        &token,
+        &AMOUNT,
+        &tranches(&env),
+        &ApprovalMode::Multisig,
+        &approvers,
+        &2u32,
+        &Address::generate(&env),
+        &deadline,
+    );
+}
+
+#[test]
+#[should_panic(expected = "insufficient approvals")]
+fn test_approve_milestone_double_count_blocked() {
+    let (env, router, sender, recipient, token) = setup();
+    let approvers = approvers(&env);
+    let escrow = deploy_multisig(
+        &env,
+        &router,
+        &sender,
+        &recipient,
+        &token,
+        approvers.clone(),
+        env.ledger().timestamp() + 1000,
+    );
+    MockTokenClient::new(&env, &token).mint(&escrow, &AMOUNT);
+
+    let client = MilestoneEscrowClient::new(&env, &escrow);
+    client.fund_milestone();
+
+    // The same approver approving twice must count once.
+    client.approve_milestone(&approvers.get(0).unwrap(), &0);
+    client.approve_milestone(&approvers.get(0).unwrap(), &0);
+    assert_eq!(client.approval_count(&0), 1);
+
+    // Threshold is 2, so a single approver still cannot release.
+    client.release_milestone(&0);
+}

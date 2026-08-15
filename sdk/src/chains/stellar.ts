@@ -86,8 +86,8 @@ export class StellarChainAdapter implements ChainAdapter {
         duration: req.duration,
         timeout: req.timeout,
       }),
-    )) as [bigint, string];
-    return { messageId: String(deliveryId), escrowAddress };
+    )) as [string, string];
+    return { messageId: deliveryId, escrowAddress };
   }
 
   async createMilestonePayment(req: MilestoneRequest): Promise<PaymentInitResult> {
@@ -107,8 +107,8 @@ export class StellarChainAdapter implements ChainAdapter {
         release_deadline: req.releaseDeadline,
         timeout: req.timeout,
       }),
-    )) as [bigint, string];
-    return { messageId: String(deliveryId), escrowAddress };
+    )) as [string, string];
+    return { messageId: deliveryId, escrowAddress };
   }
 
   async approveMilestone(escrowAddress: string, approver: string, index: number): Promise<void> {
@@ -131,7 +131,7 @@ export class StellarChainAdapter implements ChainAdapter {
     await this.send(
       client.refund_one_time({
         sender,
-        delivery_id: Number(messageId),
+        delivery_id: messageId,
       }),
     );
   }
@@ -155,7 +155,7 @@ export class StellarChainAdapter implements ChainAdapter {
     if (ref.messageId) {
       const client = await this.client();
       const lock = (await this.send(
-        client.one_time_lock({ delivery_id: Number(ref.messageId) }),
+        client.one_time_lock({ delivery_id: ref.messageId }),
       )) as { amount: bigint; settled: boolean; refunded: boolean };
       return {
         mode: PaymentMode.OneTime,

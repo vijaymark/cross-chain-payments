@@ -22,6 +22,7 @@ const TRANCHES: Symbol = soroban_sdk::symbol_short!("tranches");
 const APPROVERS: Symbol = soroban_sdk::symbol_short!("approvers");
 const RELEASED: Symbol = soroban_sdk::symbol_short!("released");
 const APPROVALS: Symbol = soroban_sdk::symbol_short!("approvals");
+const APPROVED_BY: Symbol = soroban_sdk::symbol_short!("appr_by");
 const ATTESTED: Symbol = soroban_sdk::symbol_short!("attested");
 const FUNDED: Symbol = soroban_sdk::symbol_short!("funded");
 const CANCELLED: Symbol = soroban_sdk::symbol_short!("cancelled");
@@ -47,6 +48,11 @@ impl MilestoneEscrow {
         oracle: Address,
         release_deadline: u64,
     ) {
+        router.require_auth();
+
+        let existing: Option<Address> = env.storage().instance().get(&ROUTER);
+        assert!(existing.is_none(), "already initialized");
+
         assert!(amount > 0, "zero amount");
         assert!(tranche_amounts.len() > 0, "no tranches");
         assert!(release_deadline > env.ledger().timestamp(), "deadline in past");
@@ -119,6 +125,15 @@ impl MilestoneEscrow {
         let released: Map<u32, bool> =
             env.storage().instance().get(&RELEASED).unwrap_or(Map::new(&env));
         assert!(!released.get(index).unwrap_or(false), "already released");
+
+        let mut approved_by: Map<(u32, Address), bool> =
+            env.storage().instance().get(&APPROVED_BY).unwrap_or(Map::new(&env));
+        let key = (index, approver.clone());
+        if approved_by.get(key.clone()).unwrap_or(false) {
+            return; // idempotent
+        }
+        approved_by.set(key, true);
+        env.storage().instance().set(&APPROVED_BY, &approved_by);
 
         let mut approvals: Map<u32, u32> =
             env.storage().instance().get(&APPROVALS).unwrap_or(Map::new(&env));

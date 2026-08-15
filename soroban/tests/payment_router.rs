@@ -47,9 +47,9 @@ fn setup() -> TestEnv {
     let wasm_hash = env.deployer().upload_contract_wasm(Bytes::from_slice(&env, WASM));
 
     let source_router = env.register(PaymentRouter, ());
-    PaymentRouterClient::new(&env, &source_router).router_init(&SOURCE_CHAIN, &wasm_hash, &wasm_hash);
+    PaymentRouterClient::new(&env, &source_router).router_init(&admin, &SOURCE_CHAIN, &wasm_hash, &wasm_hash);
     let dest_router = env.register(PaymentRouter, ());
-    PaymentRouterClient::new(&env, &dest_router).router_init(&DEST_CHAIN, &wasm_hash, &wasm_hash);
+    PaymentRouterClient::new(&env, &dest_router).router_init(&admin, &DEST_CHAIN, &wasm_hash, &wasm_hash);
 
     let bridge = env.register(MockBridgeAdapter, ());
     MockBridgeAdapterClient::new(&env, &bridge).bridge_init(&admin);
@@ -90,7 +90,7 @@ fn test_stream_payment_full_flow() {
 
     // deliver to destination
     MockBridgeAdapterClient::new(env, &t.bridge).deliver(&delivery_id);
-    assert!(PaymentRouterClient::new(env, &t.dest_router).is_delivered(&SOURCE_CHAIN, &0u64));
+    assert!(PaymentRouterClient::new(env, &t.dest_router).is_delivered(&SOURCE_CHAIN, &t.sender, &0u64));
 
     // recipient withdraws half after 50 seconds
     let start = StreamEscrowClient::new(env, &escrow).start_time();
@@ -134,7 +134,7 @@ fn test_milestone_payment_full_flow() {
     assert_eq!(TokenClient::new(env, &t.token).balance(&t.recipient), 60);
 
     MockBridgeAdapterClient::new(env, &t.bridge).deliver(&delivery_id);
-    assert!(PaymentRouterClient::new(env, &t.dest_router).is_delivered(&SOURCE_CHAIN, &0u64));
+    assert!(PaymentRouterClient::new(env, &t.dest_router).is_delivered(&SOURCE_CHAIN, &t.sender, &0u64));
 }
 
 #[test]
@@ -163,6 +163,7 @@ fn test_receive_message_replay_rejected() {
         nonce: 0,
         source_chain_id: SOURCE_CHAIN,
         dest_chain_id: DEST_CHAIN,
+        sender: t.sender.clone(),
         token: t.token.clone(),
         amount: 100,
         recipient: t.recipient.clone(),
@@ -183,6 +184,7 @@ fn test_receive_message_token_not_allowed() {
         nonce: 0,
         source_chain_id: SOURCE_CHAIN,
         dest_chain_id: DEST_CHAIN,
+        sender: t.sender.clone(),
         token: Address::generate(env), // not on the allowlist
         amount: 100,
         recipient: t.recipient.clone(),
@@ -201,6 +203,7 @@ fn test_dest_router_rejects_wrong_chain() {
         nonce: 0,
         source_chain_id: SOURCE_CHAIN,
         dest_chain_id: 999,
+        sender: t.sender.clone(),
         token: t.token.clone(),
         amount: 100,
         recipient: t.recipient.clone(),
@@ -208,4 +211,33 @@ fn test_dest_router_rejects_wrong_chain() {
         metadata: Bytes::new(env),
     };
     PaymentRouterClient::new(env, &t.dest_router).receive_message(&message);
+}
+
+#[test]
+fn test_router_owner_is_admin() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let router = env.register(PaymentRouter, ());
+    let wasm_hash = env.deployer().upload_contract_wasm(Bytes::from_slice(&env, WASM));
+
+    PaymentRouterClient::new(&env, &router).router_init(&admin, &SOURCE_CHAIN, &wasm_hash, &wasm_hash);
+
+    assert_eq!(PaymentRouterClient::new(&env, &router).owner(), admin);
+}
+
+#[test]
+#[should_panic(expected = "already initialized")]
+fn test_router_init_cannot_reinitialize() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let router = env.register(PaymentRouter, ());
+    let wasm_hash = env.deployer().upload_contract_wasm(Bytes::from_slice(&env, WASM));
+
+    let client = PaymentRouterClient::new(&env, &router);
+    client.router_init(&admin, &SOURCE_CHAIN, &wasm_hash, &wasm_hash);
+    client.router_init(&admin, &SOURCE_CHAIN, &wasm_hash, &wasm_hash);
 }

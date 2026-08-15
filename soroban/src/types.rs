@@ -32,6 +32,7 @@ pub struct CrossChainMessage {
     pub nonce: u64,
     pub source_chain_id: u32,
     pub dest_chain_id: u32,
+    pub sender: Address,
     pub token: Address,
     pub amount: i128,
     pub recipient: Address,

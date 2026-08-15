@@ -104,13 +104,26 @@ stellar contract invoke --id $STELLAR_BRIDGE --network testnet --source $STELLAR
 
 ## Message encoding note
 
+**Status: receive path wired; EVM ABI interop is the remaining step.**
+
+The Soroban `PaymentRouter` now exposes a bytes-based receive entry point
+(`recv_bytes`) that the `axelar_bridge.__execute` forwards payloads to, and the
+router dispatches outbound messages through a generic `Bridge` interface
+(`crate::bridge`, `send(env, caller, dest_chain_id, payload)`) instead of
+hardcoding the mock bridge. `recv_bytes` decodes the Soroban-native codec in
+`crate::codec` (`CrossChainMessage` <-> `Bytes`, length-prefixed big-endian).
+
 The EVM router ABI-encodes the `CrossChainMessage` and hands the raw `bytes
-payload` to the bridge. The Soroban side forwards those bytes unchanged. The
-Soroban `PaymentRouter` therefore needs a bytes-based receive entry point
-(`recv_bytes`) that ABI-decodes the message into the Soroban `CrossChainMessage`
-type — a small follow-up to the existing mock-bridge flow (which passes typed
-structs directly). This is the only remaining wiring for full end-to-end
-delivery; the escrow/accounting code is unchanged.
+payload` to the bridge, so full Ethereum <-> Soroban delivery still needs two
+follow-ups:
+
+1. **EVM ABI decode** — teach `recv_bytes` (or a dedicated entry point) to
+   ABI-decode Ethereum-originated payloads, and ABI-encode outbound Soroban
+   messages.
+2. **Unified `send` signature** — align `axelar_bridge.send` with the
+   `send(env, caller, dest_chain_id, payload)` interface (currently it takes an
+   extra `gas_token` argument), so the Soroban router can dispatch to it via
+   the `Bridge` client.
 
 ## Security
 

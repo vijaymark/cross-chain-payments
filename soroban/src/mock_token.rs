@@ -16,6 +16,9 @@ pub struct MockToken;
 #[contractimpl]
 impl MockToken {
     pub fn token_init(env: Env, admin: Address, name: String, symbol: String, decimals: u32) {
+        let existing: Option<Address> = env.storage().instance().get(&ADMIN);
+        assert!(existing.is_none(), "already initialized");
+
         env.storage().instance().set(&ADMIN, &admin);
         env.storage().instance().set(&NAME, &name);
         env.storage().instance().set(&SYMBOL, &symbol);

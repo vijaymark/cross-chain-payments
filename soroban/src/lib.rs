@@ -16,6 +16,8 @@
 
 #![no_std]
 
+pub mod bridge;
+pub mod codec;
 pub mod milestone_escrow;
 pub mod mock_bridge;
 pub mod mock_token;

@@ -147,3 +147,13 @@ fn test_withdraw_after_cancel_panics() {
     client.cancel();
     client.withdraw();
 }
+
+#[test]
+#[should_panic(expected = "already initialized")]
+fn test_stream_init_cannot_reinitialize() {
+    let (env, router, sender, recipient, token) = setup();
+    let escrow = env.register(StreamEscrow, ());
+    let client = StreamEscrowClient::new(&env, &escrow);
+    client.stream_init(&router, &sender, &recipient, &token, &AMOUNT, &DURATION);
+    client.stream_init(&router, &sender, &recipient, &token, &AMOUNT, &DURATION);
+}

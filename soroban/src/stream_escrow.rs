@@ -35,6 +35,11 @@ impl StreamEscrow {
         amount: i128,
         duration: u64,
     ) {
+        router.require_auth();
+
+        let existing: Option<Address> = env.storage().instance().get(&ROUTER);
+        assert!(existing.is_none(), "already initialized");
+
         assert!(amount > 0, "zero amount");
         assert!(duration > 0, "zero duration");
         assert!(amount >= duration as i128, "amount < duration");

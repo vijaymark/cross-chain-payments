@@ -1,16 +1,24 @@
 //! In-memory bridge for local/testnet development. Simulates the async
 //! `send → deliver` flow of a real bridge, routing each message to the
 //! destination router registered for its `dest_chain_id`.
+//!
+//! `send` implements the `Bridge` interface (`crate::bridge`): it accepts an
+//! opaque `payload: Bytes` so the router is transport-agnostic.
 
-use soroban_sdk::{contract, contractimpl, Address, Env, Map, Symbol};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Bytes, BytesN, Env, Map, Symbol};
 
 use crate::payment_router::PaymentRouterClient;
-use crate::types::CrossChainMessage;
 
 const OWNER: Symbol = soroban_sdk::symbol_short!("owner");
 const ROUTERS: Symbol = soroban_sdk::symbol_short!("routers");
 const OUTBOX: Symbol = soroban_sdk::symbol_short!("outbox");
-const NEXT_ID: Symbol = soroban_sdk::symbol_short!("next_id");
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Outbound {
+    pub dest_chain_id: u32,
+    pub payload: Bytes,
+}
 
 #[contract]
 pub struct MockBridgeAdapter;
@@ -18,8 +26,10 @@ pub struct MockBridgeAdapter;
 #[contractimpl]
 impl MockBridgeAdapter {
     pub fn bridge_init(env: Env, owner: Address) {
+        let existing: Option<Address> = env.storage().instance().get(&OWNER);
+        assert!(existing.is_none(), "already initialized");
+
         env.storage().instance().set(&OWNER, &owner);
-        env.storage().instance().set(&NEXT_ID, &0u64);
     }
 
     /// Register the destination router for a chain id.
@@ -33,30 +43,27 @@ impl MockBridgeAdapter {
         env.storage().instance().set(&ROUTERS, &routers);
     }
 
-    /// Queue a message and return its delivery id.
-    pub fn send_message(env: Env, message: CrossChainMessage) -> u64 {
-        let next: u64 = env.storage().instance().get(&NEXT_ID).unwrap();
-        env.storage().instance().set(&NEXT_ID, &(next + 1));
-
-        let mut outbox: Map<u64, CrossChainMessage> =
+    /// Queue a raw payload for delivery to `dest_chain_id`. `caller` is unused
+    /// by the mock transport (real adapters use it to pay relayer gas).
+    pub fn send(env: Env, _caller: Address, dest_chain_id: u32, payload: Bytes) {
+        let delivery_id = env.crypto().sha256(&payload);
+        let mut outbox: Map<BytesN<32>, Outbound> =
             env.storage().instance().get(&OUTBOX).unwrap_or(Map::new(&env));
-        outbox.set(next, message);
+        outbox.set(delivery_id, Outbound { dest_chain_id, payload });
         env.storage().instance().set(&OUTBOX, &outbox);
-
-        next
     }
 
     /// Simulate a relayer delivering a queued message to the router registered
     /// for its destination chain.
-    pub fn deliver(env: Env, delivery_id: u64) {
-        let outbox: Map<u64, CrossChainMessage> =
+    pub fn deliver(env: Env, delivery_id: BytesN<32>) {
+        let outbox: Map<BytesN<32>, Outbound> =
             env.storage().instance().get(&OUTBOX).unwrap_or(Map::new(&env));
-        let message = outbox.get(delivery_id).expect("not queued");
+        let outbound = outbox.get(delivery_id).expect("not queued");
 
         let routers: Map<u32, Address> =
             env.storage().instance().get(&ROUTERS).unwrap_or(Map::new(&env));
-        let router = routers.get(message.dest_chain_id).expect("no router for chain");
+        let router = routers.get(outbound.dest_chain_id).expect("no router for chain");
 
-        PaymentRouterClient::new(&env, &router).receive_message(&message);
+        PaymentRouterClient::new(&env, &router).recv_bytes(&outbound.payload);
     }
 }
