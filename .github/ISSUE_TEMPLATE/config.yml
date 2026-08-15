@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔐 Security disclosure
+    url: https://github.com/vijaymark/ipay/blob/main/SECURITY.md
+    about: Do NOT open a public issue for vulnerabilities — follow SECURITY.md instead.
+  - name: 📖 Protocol spec
+    url: https://github.com/vijaymark/ipay/blob/main/docs/PROTOCOL_SPEC.md
+    about: Read the message format and replay model before opening an issue.
+  - name: ❓ Questions & discussion
+    url: https://github.com/vijaymark/ipay/discussions
+    about: Ask usage questions or start a discussion here.

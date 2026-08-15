@@ -1,0 +1,43 @@
+name: ✨ Feature request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: [enhancement, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the feature you'd like and the problem it solves. For Wave
+        participants, a concrete, scoped request is far more likely to be picked up.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this solve? Link any related issues.
+      placeholder: e.g. There is no way to pause a stuck escrow.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe your idea, ideally with the interface/behavior change.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you've thought through.
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Complexity (maintainers)
+      description: Rough size of the change, used for Wave issue scoping.
+      options:
+        - Trivial
+        - Low
+        - Medium
+        - High
+      default: 1
+    validations:
+      required: true

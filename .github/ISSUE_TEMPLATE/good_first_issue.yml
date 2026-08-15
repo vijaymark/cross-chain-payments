@@ -1,0 +1,46 @@
+name: 🧰 Task / good first issue
+description: A scoped, ready-to-pick-up task for contributors
+title: "[Task]: "
+labels: [good first issue]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for small, self-contained tasks that a newcomer can complete
+        in a session. Keep the scope tight and point to the exact files.
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What exactly needs doing? Be specific about the files/functions.
+      placeholder: e.g. Add a revert test in contracts/test/PaymentRouter.t.sol for ...
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      description: How will we know it's complete? (tests, commands, etc.)
+      placeholder: |
+        - [ ] New test added and `forge test` passes
+    validations:
+      required: true
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Complexity
+      description: Rough size of the change, used for Wave issue scoping.
+      options:
+        - Trivial
+        - Low
+        - Medium
+        - High
+      default: 1
+    validations:
+      required: true
+  - type: textarea
+    id: hints
+    attributes:
+      label: Hints / pointers
+      description: Where to start, related docs, or existing examples to copy from.
+      placeholder: See CONTRIBUTING.md and docs/PROTOCOL_SPEC.md §4.
