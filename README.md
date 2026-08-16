@@ -49,6 +49,9 @@ without either side ever touching a bridge UI.
 ## Architecture
 
 ```mermaid
+%% alt-text: Cross-chain payment flow from Funder on EVM source chain through
+%% PaymentRouter to Stream/Milestone Escrow, then via Bridge Adapter to destination
+%% chain (Soroban) where Recipient withdraws funds or checks payment status.
 flowchart LR
     subgraph src["Source chain (EVM)"]
         F[Funder] -->|fund| R1[PaymentRouter]
@@ -68,6 +71,21 @@ flowchart LR
     P[Recipient] -.->|withdraw / release| SE
     P -.->|status| R2
 ```
+
+The diagram above illustrates the cross-chain payment data flow:
+
+**Source chain (EVM):** A Funder initiates a payment by funding the
+PaymentRouter, which pulls tokens into either a Stream Escrow (linear
+per-second release) or a Milestone Escrow (tranche-based release), and
+simultaneously encodes a CrossChainMessage for the bridge adapter.
+
+**Bridge:** The Bridge Adapter relays the encoded message from the source
+chain to the destination chain. The protocol is bridge-agnostic — any of
+mock, LayerZero, or Axelar can be used.
+
+**Destination chain (Soroban):** The destination PaymentRouter receives the
+message via `receiveMessage`, records the announcement for status queries,
+and the Recipient can withdraw from the escrow or check payment status.
 
 Every payment is described once in a canonical message format
 (`docs/PROTOCOL_SPEC.md` §4), escrowed on the source chain, and announced on

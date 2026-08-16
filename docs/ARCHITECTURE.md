@@ -7,6 +7,9 @@ payment flows through them. It is the implementation companion to
 ## Component overview
 
 ```mermaid
+%% alt-text: IPay component overview — Next.js UI uses CrossChainClient SDK,
+%% which connects via EVMChainAdapter or StellarChainAdapter to PaymentRouters
+%% on EVM (Solidity) and Soroban (Rust) chains, with Stream/Milestone escrows.
 flowchart TB
     subgraph App["app/ (Next.js)"]
         UI[Payment UI]
@@ -43,6 +46,23 @@ flowchart TB
     PR_SOR --> MOCK_SOR
     MOCK_EVM -.->|relay message| MOCK_SOR
 ```
+
+The diagram above shows the four main subsystems of IPay:
+
+**app/** — A Next.js reference frontend through which users interact with the
+protocol via the SDK.
+
+**sdk/** — The TypeScript SDK (`CrossChainClient`) provides a chain-agnostic
+interface, with adapters for EVM (`EVMChainAdapter`) and Stellar
+(`StellarChainAdapter`) chains.
+
+**contracts/** (Solidity) — The EVM payment contracts: `PaymentRouter` is the
+single entry point per chain; `StreamEscrow` and `MilestoneEscrow` custody
+funds per payment; `MockBridgeAdapter` implements the bridge interface.
+
+**soroban/** (Rust) — The Soroban mirror of the EVM contracts, providing the
+same primitives on the Stellar chain. Cross-chain relay messages flow from
+`MockBridgeAdapter` to `mock_bridge`.
 
 ## Components
 
