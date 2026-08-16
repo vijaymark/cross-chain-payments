@@ -67,11 +67,11 @@ LayerZero V2 identifiers used here (see [LayerZero deployments](https://docs.lay
 ```bash
 git clone <this-repo> && cd crosspay
 
-forge install foundry-rs/forge-std --no-commit
-forge install OpenZeppelin/openzeppelin-contracts@v5.0.2 --no-commit
-forge install LayerZero-Labs/devtools --no-commit
-forge install LayerZero-Labs/LayerZero-v2 --no-commit
-forge install GNSPS/solidity-bytes-utils --no-commit
+forge install foundry-rs/forge-std --no-git
+forge install OpenZeppelin/openzeppelin-contracts@v5.0.2 --no-git
+forge install LayerZero-Labs/devtools --no-git
+forge install LayerZero-Labs/LayerZero-v2 --no-git
+forge install GNSPS/solidity-bytes-utils --no-git
 # …or: make install-deps
 
 cp .env.example .env   # then fill in PRIVATE_KEY, OWNER, and both RPC URLs
